@@ -44,7 +44,7 @@ Z80::Z80(Z80operations *ops) {
 
     Z80opsImpl = ops;
     execDone = false;
-    breakpointAt = new bool[65536];
+    breakpointAt = new bool[0x10000];
     resetBreakpoints();
     reset();
 }
@@ -567,16 +567,16 @@ void Z80::daa(void) {
 }
 
 // POP
-uint16_t Z80::pop(void) {
+uint16_t Z80::pop() {
     uint16_t word = Z80opsImpl->peek16(REG_SP);
-    REG_SP = REG_SP + 2;
+    REG_SP += 2;
     return word;
 }
 
 // PUSH
 void Z80::push(uint16_t word) {
-    Z80opsImpl->poke8(--REG_SP, word >> 8);
-    Z80opsImpl->poke8(--REG_SP, word);
+    REG_SP -= 2;
+    Z80opsImpl->poke16(REG_SP, *(RegisterPair *) &word);
 }
 
 // LDI

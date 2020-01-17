@@ -27,17 +27,39 @@ void Z80sim::poke8(uint16_t address, uint8_t value) {
     z80Ram[address] = value;
 }
 
-uint16_t Z80sim::peek16(uint16_t address) {
+uint16_t Z80emu::peek16(uint16_t address) {
+#if __BYTE_ORDER__ == __ORDER_BIG_ENDIAN__
     // Order matters, first read lsb, then read msb, don't "optimize"
     uint8_t lsb = peek8(address);
     uint8_t msb = peek8(address + 1);
-    return (msb << 8) | lsb;
+    return (msb << 0x08u) | lsb;
+#else
+    // 6 clocks to read word from RAM
+    tstates += 6;
+    /* It is safe to read 16 bit words without explicit byte swapping if the
+     * byte order of the host machine matches that of the Zilog Z80 CPU we are
+     * emulating, in other words, little endian.  The 16 read and 16 bit write
+     * will cancel each other out.
+     */
+    return *reinterpret_cast<uint16_t *>(&z80Ram[address]);
+#endif
 }
 
-void Z80sim::poke16(uint16_t address, RegisterPair word) {
+void Z80emu::poke16(uint16_t address, RegisterPair word) {
+#if __BYTE_ORDER__ == __ORDER_BIG_ENDIAN__
     // Order matters, first write lsb, then write msb, don't "optimize"
     poke8(address, word.byte8.lo);
     poke8(address + 1, word.byte8.hi);
+#else
+    // 6 clocks to write word to RAM
+    tstates += 6;
+    /* It is safe to write 16 bit words without explicit byte swapping if the
+     * byte order of the host machine matches that of the Zilog Z80 CPU we are
+     * emulating, in other words, little endian.  The 16 read and 16 bit write
+     * will cancel each other out.
+     */
+    *reinterpret_cast<uint16_t *>(&z80Ram[address]) = word.word;
+#endif
 }
 
 uint8_t Z80sim::inPort(uint16_t port) {
@@ -62,7 +84,7 @@ void Z80sim::interruptHandlingTime(int32_t tstates) {
 }
 
 bool Z80sim::isActiveINT(void) {
-	// Put here the needed logic to trigger an INT
+	// Put here the logic needed to trigger an INT
     return false;
 }
 
@@ -75,7 +97,7 @@ uint8_t Z80sim::breakpoint(uint16_t address, uint8_t opcode) {
     switch (cpu.getRegC()) {
         case 0: // BDOS 0 System Reset
         {
-            cout << "Z80 reset after " << tstates << " t-states" << endl;
+            cout << endl <<  "Z80 reset after " << tstates << " t-states" << endl;
             finish = true;
             break;
         }
