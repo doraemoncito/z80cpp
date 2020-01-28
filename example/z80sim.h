@@ -36,5 +36,7 @@ public:
 #endif
 
     void runTest(std::ifstream* f);
+    void runTest(unsigned char const* base, size_t size);
+
 };
 #endif // Z80SIM_H

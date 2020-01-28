@@ -1,4 +1,25 @@
+#include <streambuf>
+#include <istream>
+#include <string.h>
 #include "z80sim.h"
+#include "zexall.h"
+
+// https://github.com/devkitPro/buildscripts/issues/26#issuecomment-315311408
+//extern "C" void __sync_synchronize() {}
+
+struct membuf: std::streambuf {
+    membuf(unsigned char const* base, size_t size) {
+        char* p(const_cast<char*>(reinterpret_cast<const char *>(base)));
+        this->setg(p, p, p + size);
+    }
+};
+
+struct imemstream: virtual membuf, std::istream {
+    imemstream(unsigned char const* base, size_t size)
+        : membuf(base, size)
+        , std::istream(static_cast<std::streambuf*>(this)) {
+    }
+};
 
 using namespace std;
 
@@ -131,12 +152,33 @@ void Z80sim::runTest(std::ifstream* f) {
     }
 }
 
+void Z80sim::runTest(unsigned char const* base, size_t size) {
+
+    memcpy(&z80Ram[0x100],  base,  size);
+
+    cpu.reset();
+    finish = false;
+
+    z80Ram[0] = (uint8_t) 0xC3;
+    z80Ram[1] = 0x00;
+    z80Ram[2] = 0x01; // JP 0x100 CP/M TPA
+    z80Ram[5] = (uint8_t) 0xC9; // Return from BDOS call
+
+    cpu.setBreakpoint(0x0005, true);
+    while (!finish) {
+        cpu.execute();
+    }
+}
+
 int main(void) {
 
     Z80sim sim = Z80sim();
 
-    ifstream f1("zexall.bin", ios::in | ios::binary | ios::ate);
-    sim.runTest(&f1);
-    f1.close();
+    // ifstream f1("zexall.bin", ios::in | ios::binary | ios::ate);
+    // sim.runTest(&f1);
+    // f1.close();
 
+    // imemstream f1(zexall_bin, zexall_bin_len);
+
+    sim.runTest(zexall_bin, zexall_bin_len);
 }

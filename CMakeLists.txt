@@ -7,6 +7,11 @@
 cmake_minimum_required (VERSION 2.8)
 project (z80cpp)
 
+# https://stackoverflow.com/questions/5096881/does-set-target-properties-in-cmake-override-cmake-cxx-flags
+# https://gitlab.kitware.com/cmake/cmake/issues/17991
+set(CMAKE_CXX_FLAGS "-fno-exceptions ${CMAKE_CXX_FLAGS}")
+#set_target_properties(${TARGET} PROPERTIES COMPILE_FLAGS ${BUILD_FLAGS})
+
 # Set the rpath policy and C++ version for MacOS builds
 if (${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
     # set the RPATH policy
@@ -24,10 +29,12 @@ set (RELEASE_TYPE "")
 set (VERSION_STR "${API_REVISION}.${VERSION_MAJOR}.${VERSION_MINOR}${RELEASE_TYPE}")
 
 if (CMAKE_COMPILER_IS_GNUCXX)
-    set (CMAKE_CXX_FLAGS "-Wall -O3 -std=c++14")
+    set (CMAKE_CXX_FLAGS "-Wall -O3 -std=c++14 -fno-exceptions")
 endif ()
 
 include_directories(BEFORE . include)
+
+add_subdirectory(examples)
 
 set (z80cpp_sources src/z80.cpp include/z80.h include/z80operations.h )
 add_library (z80cpp-static STATIC ${z80cpp_sources})
@@ -57,7 +64,7 @@ if (NOT DEFINED Z80CPP_STATIC_ONLY)
 endif ()
 
 # Enable running the test simulator as part the `make test` target
-set( TEST_SOURCES example/z80sim.cpp example/z80sim.h )
+set( TEST_SOURCES example/z80sim.cpp example/z80sim.h example/zexall.h )
 add_executable( z80sim ${TEST_SOURCES} )
 target_link_libraries( z80sim z80cpp-static )
 configure_file( example/zexall.bin zexall.bin COPYONLY )
