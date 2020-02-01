@@ -62,7 +62,7 @@ boolean CKernel::Initialize(void) {
 	if (bOK)
 	{
 		CBcmFrameBuffer *bcmFrameBuffer = new CBcmFrameBuffer(352, 272, 4);
-		bOK = m_SpectrumScreen.Initialize (BruceLee_scr, bcmFrameBuffer);
+		bOK = m_SpectrumScreen.Initialize(BruceLee_scr, bcmFrameBuffer);
 	}
 
 	return bOK;

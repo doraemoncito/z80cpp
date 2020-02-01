@@ -1,3 +1,4 @@
 /build*/
 example/z80sim
 .vscode
+.DS_Store

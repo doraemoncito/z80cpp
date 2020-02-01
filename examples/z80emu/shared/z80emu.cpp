@@ -173,7 +173,6 @@ void Z80emu::initialise(unsigned char const* base, size_t size) {
 //     cpu.setBreakpoint(0x0005, true);
 // }
 
-static unsigned int c = 0;
 
 void Z80emu::run() {
     cpu.execute();

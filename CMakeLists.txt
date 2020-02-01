@@ -12,10 +12,6 @@ if( ${CMAKE_SYSTEM_NAME} MATCHES "Generic" )
     set( Z80CPP_STATIC_ONLY true )
 endif()
 
-if( ${CMAKE_SYSTEM_NAME} MATCHES "Generic" )
-    set( CFLAGS_FOR_TARGET "-DAARCH=32 -march=armv6k -mtune=arm1176jzf-s -marm -mfpu=vfp -mfloat-abi=hard -Wno-parentheses" )
-endif()
-
 # https://stackoverflow.com/questions/5096881/does-set-target-properties-in-cmake-override-cmake-cxx-flags
 # https://gitlab.kitware.com/cmake/cmake/issues/17991
 set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} ${CFLAGS_FOR_TARGET}")
@@ -82,7 +78,8 @@ if( ${CMAKE_SYSTEM_NAME} MATCHES "Generic" )
 
     # FIXME: make this relative
     set( INCLUDE_PREFIX "/home/vagrant/src/z80cpp/build" )
-    set( NEWLIB_ARCH "arm-none-circle" )
+#    set( NEWLIB_ARCH "arm-none-circle" )
+    set( NEWLIB_ARCH "aarch64-none-circle" )
     set( NEWLIBDIR "${INCLUDE_PREFIX}/../../circle-stdlib/install/${NEWLIB_ARCH}" )
     set( CIRCLEHOME "${INCLUDE_PREFIX}/../../circle-stdlib/libs/circle" )
 

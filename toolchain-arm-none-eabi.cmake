@@ -12,18 +12,19 @@
 set( CMAKE_SYSTEM_NAME Generic )
 set( CMAKE_SYSTEM_PROCESSOR arm )
 
-set( toolchain_prefix arm-none-eabi )
+set( toolchain_prefix arm-none-eabi- )
 
-set( CMAKE_C_COMPILER ${toolchain_prefix}-gcc )
-set( CMAKE_C_COMPILER_TARGET ${toolchain_prefix}-gcc )
-set( CMAKE_CXX_COMPILER ${toolchain_prefix}-g++ )
-set( CMAKE_CXX_COMPILER_TARGET ${toolchain_prefix}-g++ )
-set( CMAKE_LINKER ${toolchain_prefix}-ld )
+set( CMAKE_C_COMPILER ${toolchain_prefix}gcc )
+set( CMAKE_C_COMPILER_TARGET ${toolchain_prefix}gcc )
+set( CMAKE_CXX_COMPILER ${toolchain_prefix}g++ )
+set( CMAKE_CXX_COMPILER_TARGET ${toolchain_prefix}g++ )
+set( CMAKE_LINKER ${toolchain_prefix}ld )
+set( CFLAGS_FOR_TARGET "-DAARCH=32 -march=armv6k -mtune=arm1176jzf-s -marm -mfpu=vfp -mfloat-abi=hard -Wno-parentheses" )
 
 # SET( LINK_FLAGS "--map --ro-base=0x0 --rw-base=0x0008000 --first='boot.o(RESET)' --datacompressor=off")
 # set( CMAKE_C_LINK_EXECUTABLE "<CMAKE_LINKER> <OBJECTS> -o <TARGET> <LINK_LIBRARIES>" )
 # set( CMAKE_C_LINK_EXECUTABLE "<CMAKE_LINKER> <FLAGS> <CMAKE_C_LINK_FLAGS> <LINK_FLAGS> <OBJECTS> -o <TARGET> <LINK_LIBRARIES>" )
-# set( CMAKE_C_LINK_EXECUTABLE ${toolchain_prefix}-ld )
+# set( CMAKE_C_LINK_EXECUTABLE ${toolchain_prefix}ld )
 # set( CMAKE_CXX_LINK_EXECUTABLE "<CMAKE_LINKER> <FLAGS> <CMAKE_C_LINK_FLAGS> <LINK_FLAGS> <OBJECTS> -o <TARGET> <LINK_LIBRARIES>" )
 
 # https://stackoverflow.com/questions/43781207/how-to-cross-compile-with-cmake-arm-none-eabi-on-windows)

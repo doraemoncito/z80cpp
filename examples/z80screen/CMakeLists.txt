@@ -41,7 +41,8 @@ if( ${CMAKE_SYSTEM_NAME} MATCHES "Generic" )
 
     # FIXME: make this relative
     set( INCLUDE_PREFIX "/home/vagrant/src/z80cpp/build" )
-    set( NEWLIB_ARCH "arm-none-circle" )
+#    set( NEWLIB_ARCH "arm-none-circle" )
+    set( NEWLIB_ARCH "aarch64-none-circle" )
     set( NEWLIBDIR "${INCLUDE_PREFIX}/../../circle-stdlib/install/${NEWLIB_ARCH}" )
     set( CIRCLEHOME "${INCLUDE_PREFIX}/../../circle-stdlib/libs/circle" )
 
@@ -70,8 +71,10 @@ if( ${CMAKE_SYSTEM_NAME} MATCHES "Generic" )
         "${CIRCLEHOME}/lib/net/libnet.a"
         "${CIRCLEHOME}/lib/sched/libsched.a"
         "${CIRCLEHOME}/lib/libcircle.a"
-        "/usr/local/opt/gcc-arm-9.2-2019.12-x86_64-arm-none-eabi/bin/../lib/gcc/arm-none-eabi/9.2.1/../../../../arm-none-eabi/lib/arm/v5te/hard/libstdc++.a"
-        "/usr/local/opt/gcc-arm-9.2-2019.12-x86_64-arm-none-eabi/bin/../lib/gcc/arm-none-eabi/9.2.1/arm/v5te/hard/libgcc.a"
+        "/usr/local/opt/gcc-arm-8.3-2019.03-x86_64-aarch64-elf/aarch64-elf/lib/libstdc++.a"
+        "/usr/local/opt/gcc-arm-8.3-2019.03-x86_64-aarch64-elf/lib/gcc/aarch64-elf/8.3.0/libgcc.a"
+#        "/usr/local/opt/gcc-arm-9.2-2019.12-x86_64-arm-none-eabi/bin/../lib/gcc/arm-none-eabi/9.2.1/../../../../arm-none-eabi/lib/arm/v5te/hard/libstdc++.a"
+#        "/usr/local/opt/gcc-arm-9.2-2019.12-x86_64-arm-none-eabi/bin/../lib/gcc/arm-none-eabi/9.2.1/arm/v5te/hard/libgcc.a"
     )
 
     set( EXTRALIBS
@@ -86,7 +89,15 @@ if( ${CMAKE_SYSTEM_NAME} MATCHES "Generic" )
     set( LOADADDR 0x80000 )
 
     # https://gcc.gnu.org/onlinedocs/gcc/Link-Options.html
+    # After printing the whole g++ command like by invoking it with the "-v" argument we can see that g++
+    # adds some additional C runtime libraries to the ld command line, namely: crtbegin, crti and crt0.
+    # One of thoses files references the 'bss_start' and 'bss_end' symbols and since we don't need any
+    # of thoses files for linking we can remove them from the linker command line by passing the "-nostdlib"
+    # argument to g++.  For more details please see this link:
+    # https://stackoverflow.com/questions/57357726/linking-failed-when-use-indirectly-the-gnu-linker
+    #
     target_link_libraries( z80screen PUBLIC
+        "-nostdlib"
         "-T ${CIRCLEHOME}/circle.ld"
         "-Wl,--section-start=.init=${LOADADDR}"
         "-Wl,--start-group"
@@ -94,14 +105,6 @@ if( ${CMAKE_SYSTEM_NAME} MATCHES "Generic" )
         ${EXTRALIBS}
         "-Wl,--end-group"
     )
-
-#    target_link_libraries( z80screen PUBLIC ${LIBS} ${EXTRALIBS}
-#        "-T ${CIRCLEHOME}/circle.ld -Wl,--section-start=.init=${LOADADDR}"
-#    )
-
-#	@$(LD) -o $(TARGET).elf -Map $(TARGET).map --section-start=.init=$(LOADADDR) \
-#		-T $(CIRCLEHOME)/circle.ld $(CRTBEGIN) $(OBJS) \
-#		--start-group $(LIBS) $(EXTRALIBS) --end-group $(CRTEND)
 
     # post cmake 3.13 we ca use
     #target_link_options( z80screen PUBLIC "-T $(CIRCLEHOME)/circle.ld" )
