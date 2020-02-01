@@ -29,7 +29,7 @@
 #include <circle/timer.h>
 #include <circle/logger.h>
 #include <circle/types.h>
-#include <Spectrum/SpectrumScreen.h>
+#include <SpectrumScreen.h>
 
 enum TShutdownMode
 {

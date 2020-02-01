@@ -18,6 +18,7 @@
 //
 #include "kernel.h"
 #include "BruceLeeScr.h"
+#include <circle/bcmframebuffer.h>
 #include <circle/util.h>
 #include <assert.h>
 
@@ -60,7 +61,8 @@ boolean CKernel::Initialize(void) {
 
 	if (bOK)
 	{
-		bOK = m_SpectrumScreen.Initialize (BruceLee_scr);
+		CBcmFrameBuffer *bcmFrameBuffer = new CBcmFrameBuffer(352, 272, 4);
+		bOK = m_SpectrumScreen.Initialize (BruceLee_scr, bcmFrameBuffer);
 	}
 
 	return bOK;

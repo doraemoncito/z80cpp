@@ -1,5 +1,3 @@
-#include <QtGlobal>
-#include <QDebug>
 #include <streambuf>
 #include <istream>
 #include <string.h>
@@ -97,13 +95,13 @@ uint8_t Z80emu::breakpoint(uint16_t address, uint8_t opcode) {
     switch (cpu.getRegC()) {
         case 0: // BDOS 0 System Reset
         {
-            qDebug() << "Z80 reset after " << tstates << " t-states" << endl;
+            cout << "Z80 reset after " << tstates << " t-states" << endl;
             finish = true;
             break;
         }
         case 2: // BDOS 2 console char output
         {
-            qDebug() << (char) cpu.getRegE();
+            cout << (char) cpu.getRegE();
             break;
         }
         case 9: // BDOS 9 console string output (string terminated by "$")
@@ -111,15 +109,16 @@ uint8_t Z80emu::breakpoint(uint16_t address, uint8_t opcode) {
             uint16_t strAddr = cpu.getRegDE();
             uint16_t endAddr = cpu.getRegDE();
             while (z80Ram[endAddr++] != '$');
-            QByteArray message = QByteArray::fromRawData((const char *) &z80Ram[strAddr], endAddr - strAddr - 1);
-            qDebug() << message;
+            std::string message((const char *) &z80Ram[strAddr], endAddr - strAddr - 1);
+            cout << message;
+            cout.flush();
             break;
         }
         default:
         {
-            qDebug() << "BDOS Call " << cpu.getRegC() << endl;
+            cout << "BDOS Call " << cpu.getRegC() << endl;
             finish = true;
-            qDebug() << finish << endl;
+            cout << finish << endl;
         }
     }
     // opcode would be modified before the decodeOpcode method
@@ -177,12 +176,7 @@ void Z80emu::initialise(unsigned char const* base, size_t size) {
 static unsigned int c = 0;
 
 void Z80emu::run() {
-
-    if (c++ < 10) {
-        qDebug("Program counter: 0x%04X", cpu.getRegPC());
-    }
     cpu.execute();
-
 }
 
 
