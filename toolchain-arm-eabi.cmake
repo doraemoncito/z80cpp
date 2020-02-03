@@ -1,3 +1,5 @@
+# Toolchain for the original Raspberry Pi (i.e. version 1)
+#
 # Invoke CMake with the arguments bellow to build the project for Rasperry PI:                                                              
 #                                                                                                                                           
 #   cmake -DCMAKE_TOOLCHAIN_FILE=../toolchain-arm-none-eabi.cmake ..
@@ -14,13 +16,14 @@ include(CMakeForceCompiler)
 set( CMAKE_SYSTEM_NAME Generic )
 set( CMAKE_SYSTEM_PROCESSOR arm )
 
-set( toolchain_prefix arm-eabi- )
+# set the toolchain prefix for cross compilation
+set( CROSS_COMPILE arm-eabi- )
 
-set( CMAKE_C_COMPILER ${toolchain_prefix}gcc )
-set( CMAKE_C_COMPILER_TARGET ${toolchain_prefix}gcc )
-set( CMAKE_CXX_COMPILER ${toolchain_prefix}g++ )
-set( CMAKE_CXX_COMPILER_TARGET ${toolchain_prefix}g++ )
-set( CMAKE_LINKER ${toolchain_prefix}ld )
+set( CMAKE_C_COMPILER ${CROSS_COMPILE}gcc )
+set( CMAKE_C_COMPILER_TARGET ${CROSS_COMPILE}gcc )
+set( CMAKE_CXX_COMPILER ${CROSS_COMPILE}g++ )
+set( CMAKE_CXX_COMPILER_TARGET ${CROSS_COMPILE}g++ )
+set( CMAKE_LINKER ${CROSS_COMPILE}ld )
 set( CFLAGS_FOR_TARGET "-DAARCH=32 -march=armv6k -mtune=arm1176jzf-s -marm -mfpu=vfp -mfloat-abi=hard -Wno-parentheses" )
 
 # https://stackoverflow.com/questions/43781207/how-to-cross-compile-with-cmake-arm-none-eabi-on-windows)

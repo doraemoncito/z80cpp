@@ -78,8 +78,8 @@ if( ${CMAKE_SYSTEM_NAME} MATCHES "Generic" )
 
     # FIXME: make this relative
     set( INCLUDE_PREFIX "/home/vagrant/src/z80cpp/build" )
-#    set( NEWLIB_ARCH "arm-none-circle" )
-    set( NEWLIB_ARCH "aarch64-none-circle" )
+    set( NEWLIB_ARCH "arm-none-circle" )
+#    set( NEWLIB_ARCH "aarch64-none-circle" )
     set( NEWLIBDIR "${INCLUDE_PREFIX}/../../circle-stdlib/install/${NEWLIB_ARCH}" )
     set( CIRCLEHOME "${INCLUDE_PREFIX}/../../circle-stdlib/libs/circle" )
 
