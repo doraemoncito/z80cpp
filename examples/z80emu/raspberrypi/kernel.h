@@ -31,6 +31,10 @@
 #include <circle/types.h>
 #include <SpectrumScreen.h>
 
+
+class CBcmFrameBuffer;
+class Z80emu;
+
 enum TShutdownMode
 {
 	ShutdownNone,
@@ -60,6 +64,8 @@ private:
 	CLogger			m_Logger;
 
 	CSpectrumScreen		m_SpectrumScreen;
+	CBcmFrameBuffer *bcmFrameBuffer;
+	Z80emu *z80emu;
 };
 
 #endif

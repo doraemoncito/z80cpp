@@ -18,6 +18,8 @@
 //
 #include "kernel.h"
 #include "BruceLeeScr.h"
+#include "48rom.h"
+#include "z80emu.h"
 #include <circle/bcmframebuffer.h>
 #include <circle/util.h>
 #include <assert.h>
@@ -33,6 +35,7 @@ CKernel::CKernel(void) :
 
 CKernel::~CKernel(void) {
 
+	delete bcmFrameBuffer;
 }
 
 boolean CKernel::Initialize(void) {
@@ -61,8 +64,10 @@ boolean CKernel::Initialize(void) {
 
 	if (bOK)
 	{
-		CBcmFrameBuffer *bcmFrameBuffer = new CBcmFrameBuffer(352, 272, 4);
-		bOK = m_SpectrumScreen.Initialize(BruceLee_scr, bcmFrameBuffer);
+		bcmFrameBuffer = new CBcmFrameBuffer(352, 272, 4);
+		z80emu = new Z80emu();
+		bOK = m_SpectrumScreen.Initialize(z80emu->getRam() + 0x4000, bcmFrameBuffer);
+		z80emu->initialise(__48_rom, __48_rom_len);
 	}
 
 	return bOK;
@@ -70,16 +75,27 @@ boolean CKernel::Initialize(void) {
 
 TShutdownMode CKernel::Run(void) {
 
-	m_Logger.Write (FromKernel, LogNotice, "Compile time: " __DATE__ " " __TIME__);
+	// CONCEPTO DE PRUEBA: NO ESTAMOS OBSERVANDO LOS TEMPORIZADORES
+
+	m_Logger.Write (FromKernel, LogNotice, "Concepto de prueba: emulador Sinclair ZX Spectrum - Edicion Raspberry Pi");
+	m_Logger.Write (FromKernel, LogNotice, "Copyright (C) 2020 Jose Hernandez");
+	m_Logger.Write (FromKernel, LogNotice, "Muchas gracias a Jose Luis Sanchez creador del ZXBaremulator por su ayuda y consejos");
+	m_Logger.Write (FromKernel, LogNotice, "Fecha y hora de compilacion: " __DATE__ " " __TIME__);
 
 	while (TRUE) {
+#ifdef DEBUG
+		m_Logger.Write (FromKernel, LogNotice, "Actualizando video");
+#endif // DEBUG
 		m_SpectrumScreen.Update(FALSE);
 		m_ActLED.Off();
-		// The flash changes his state every 16 screen frames
-		m_Timer.usDelay(319488);
-		m_SpectrumScreen.Update(TRUE);
+		m_Timer.usDelay(19968);
+#ifdef DEBUG
+		m_Logger.Write (FromKernel, LogNotice, "Ejecutando instruccions CPU");
+#endif // DEBUG
+		for (unsigned int i=0; i < 10000; i++) {
+			z80emu->run();
+		}
 		m_ActLED.On();
-		m_Timer.usDelay(319488);
 	}
 
 	return ShutdownHalt;
