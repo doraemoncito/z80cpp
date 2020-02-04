@@ -1,5 +1,5 @@
-cmake_minimum_required(VERSION 3.5.1)
-project(z80emu LANGUAGES CXX)
+cmake_minimum_required( VERSION 3.5.1 )
+project( screentext LANGUAGES CXX )
 
 set(CMAKE_INCLUDE_CURRENT_DIR ON)
 
@@ -9,17 +9,8 @@ set(CMAKE_AUTOUIC ON)
 
 set(INSTALL_EXAMPLEDIR "examples")
 
-include_directories(
-    ../../include
-)
-
-add_executable( z80emu
-    shared/zexall.h
-    shared/SpectrumScreen.cpp
-    shared/SpectrumScreen.cpp
-    shared/z80emu.h
-    shared/z80emu.cpp
-    ../../src/z80.cpp
+add_executable( screentext
+    raspberrypi/main.cpp
 )
 
 # Use Qt and our Circle compatibility library in MacOS builds
@@ -27,17 +18,16 @@ if( ${CMAKE_SYSTEM_NAME} MATCHES "Darwin" )
 
     find_package( Qt5 COMPONENTS Widgets REQUIRED )
 
-    target_sources( z80emu PRIVATE
-        macos/main.cpp
-        macos/screen.cpp
-        macos/screen.h
-        macos/window.cpp
-        macos/window.h
-        ../../src/z80.cpp
+    target_sources( screentext PRIVATE
+#        macos/main.cpp
+#        macos/screen.cpp
+#        macos/screen.h
+#        macos/window.cpp
+#        macos/window.h
     )
 
-    include_directories(BEFORE ../../compatibility)
-    target_link_libraries( z80emu PUBLIC Qt5::Widgets )
+    include_directories( BEFORE ../../compatibility )
+    target_link_libraries( ${PROJECT_NAME} PUBLIC Qt5::Widgets )
 
 endif()
 
@@ -61,10 +51,6 @@ if( ${CMAKE_SYSTEM_NAME} MATCHES "Generic" )
 
     include_directories(
         shared
-    )
-
-    target_include_directories( z80emu PRIVATE
-        raspberrypi
     )
 
     set( LIBS
@@ -91,12 +77,16 @@ if( ${CMAKE_SYSTEM_NAME} MATCHES "Generic" )
     )
 
     set( EXTRALIBS
-        z80cpp-static
+#        z80cpp-static
     )
-
-    target_sources( z80emu PRIVATE
+    
+    target_sources( screentext PRIVATE
         raspberrypi/main.cpp
         raspberrypi/kernel.cpp
+    )
+
+    target_include_directories( ${PROJECT_NAME} PRIVATE
+        raspberrypi
     )
 
     set( LOAD_ADDR 0x0000 )
@@ -121,13 +111,13 @@ if( ${CMAKE_SYSTEM_NAME} MATCHES "Generic" )
     )
 
     # post cmake 3.13 we ca use
-    #target_link_options( z80emu PUBLIC "-T $(CIRCLEHOME)/circle.ld" )
+    #target_link_options( screentext PUBLIC "-T $(CIRCLEHOME)/circle.ld" )
 
     add_custom_command(TARGET ${PROJECT_NAME}
         # Run after the kernel has been built
         POST_BUILD
         COMMAND ${CROSS_COMPILE}objdump -d ${PROJECT_NAME} | ${CROSS_COMPILE}c++filt > kernel.lst
-        COMMENT "  DUMP  kernel.lst"
+        COMMENT "  DUMP   kernel.lst"
         VERBATIM
     )
 
@@ -135,7 +125,7 @@ if( ${CMAKE_SYSTEM_NAME} MATCHES "Generic" )
         # Run after the kernel has been built
         POST_BUILD
         COMMAND ${CROSS_COMPILE}objcopy ${PROJECT_NAME} -O binary kernel.img
-        COMMENT "  COPY  kernel.img"
+        COMMENT "  COPY   kernel.img"
         VERBATIM
     )
 
@@ -143,7 +133,7 @@ if( ${CMAKE_SYSTEM_NAME} MATCHES "Generic" )
         # Run after the kernel has been built
         POST_BUILD
         COMMAND wc -c < kernel.img
-        COMMENT "  WC    kernel.img => "
+        COMMENT "  WC     kernel.img => "
         VERBATIM
     )
 
@@ -153,14 +143,14 @@ if( ${CMAKE_SYSTEM_NAME} MATCHES "Generic" )
     add_custom_command(TARGET ${PROJECT_NAME}
         # Run after the kernel has been built
         POST_BUILD
-        COMMAND mkimage -n "Sinclair ZX (Spectrum) Pi" -A arm -O linux -T kernel -C none -a 0x0000 -e 0x8000 -d ${PROJECT_NAME} /tmp/boot.scr.uimg && mv /tmp/boot.scr.uimg .
+        COMMAND mkimage -n "screentext" -A arm -O linux -T kernel -C none -a 0x0000 -e 0x8000 -d ${PROJECT_NAME} /tmp/boot.scr.uimg && mv /tmp/boot.scr.uimg .
         COMMENT "  U-Boot boot.scr.uimg"
         VERBATIM
     )
 
 endif()
 
-install(TARGETS z80emu
+install(TARGETS screentext
     RUNTIME DESTINATION "${INSTALL_EXAMPLEDIR}"
     BUNDLE DESTINATION "${INSTALL_EXAMPLEDIR}"
     LIBRARY DESTINATION "${INSTALL_EXAMPLEDIR}"

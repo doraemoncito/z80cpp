@@ -91,7 +91,8 @@ if( ${CMAKE_SYSTEM_NAME} MATCHES "Generic" )
         raspberrypi/kernel.cpp
     )
     
-    set( LOADADDR 0x80000 )
+    set( LOAD_ADDR 0x0000 )
+    set( ENTRY_POINT 0x8000 )
 
     # https://gcc.gnu.org/onlinedocs/gcc/Link-Options.html
     # After printing the whole g++ command like by invoking it with the "-v" argument we can see that g++
@@ -101,10 +102,10 @@ if( ${CMAKE_SYSTEM_NAME} MATCHES "Generic" )
     # argument to g++.  For more details please see this link:
     # https://stackoverflow.com/questions/57357726/linking-failed-when-use-indirectly-the-gnu-linker
     #
-    target_link_libraries( z80screen PUBLIC
+    target_link_libraries( ${PROJECT_NAME} PUBLIC
         "-nostdlib"
         "-T ${CIRCLEHOME}/circle.ld"
-        "-Wl,--section-start=.init=${LOADADDR}"
+        "-Wl,--section-start=.init=${ENTRY_POINT}"
         "-Wl,--start-group"
         ${LIBS}
         ${EXTRALIBS}
