@@ -18,10 +18,13 @@
 //
 #include "kernel.h"
 #include "BruceLeeScr.h"
+#include "automania_sna.h"
+#include "dingo_sna.h"
 #include "48rom.h"
 #include "z80emu.h"
 #include <circle/bcmframebuffer.h>
-#include <circle/util.h>
+#include <circle/timer.h>
+#include <circle/logger.h>
 #include <assert.h>
 
 static const char FromKernel[] = "kernel";
@@ -45,7 +48,7 @@ boolean CKernel::Initialize(void) {
 	if (bOK)
 	{
 		bOK = m_Serial.Initialize (115200);
-	}
+	}    
 
 	if (bOK)
 	{
@@ -67,7 +70,6 @@ boolean CKernel::Initialize(void) {
 		bcmFrameBuffer = new CBcmFrameBuffer(352, 272, 4);
 		z80emu = new Z80emu();
 		bOK = m_SpectrumScreen.Initialize(z80emu->getRam() + 0x4000, bcmFrameBuffer);
-		z80emu->initialise(__48_rom, __48_rom_len);
 	}
 
 	return bOK;
@@ -77,10 +79,16 @@ TShutdownMode CKernel::Run(void) {
 
 	// CONCEPTO DE PRUEBA: NO ESTAMOS OBSERVANDO LOS TEMPORIZADORES
 
-	m_Logger.Write (FromKernel, LogNotice, "Concepto de prueba: emulador Sinclair ZX Spectrum - Edicion Raspberry Pi");
-	m_Logger.Write (FromKernel, LogNotice, "Copyright (C) 2020 Jose Hernandez");
-	m_Logger.Write (FromKernel, LogNotice, "Muchas gracias a Jose Luis Sanchez creador del ZXBaremulator por su ayuda y consejos");
-	m_Logger.Write (FromKernel, LogNotice, "Fecha y hora de compilacion: " __DATE__ " " __TIME__);
+	m_Logger.Write(FromKernel, LogNotice, "Concepto de prueba: emulador Sinclair ZX Spectrum - Edicion Raspberry Pi");
+	m_Logger.Write(FromKernel, LogNotice, "Copyright (C) 2020 Jose Hernandez");
+	m_Logger.Write(FromKernel, LogNotice, "Muchas gracias a Jose Luis Sanchez creador del ZXBaremulator por su ayuda y consejos");
+	m_Logger.Write(FromKernel, LogNotice, "Fecha y hora de compilacion: " __DATE__ " " __TIME__);
+
+	m_Logger.Write(FromKernel, LogNotice, "Cargando 48K ROM");
+	z80emu->initialise(__48_rom, __48_rom_len);
+	m_Logger.Write(FromKernel, LogNotice, "Cargando juego en formato snapshot");
+	z80emu->loadSnapshot(automania_sna);
+	// z80emu->loadSnapshot(dingo_sna);
 
 	while (TRUE) {
 #ifdef DEBUG
@@ -92,7 +100,7 @@ TShutdownMode CKernel::Run(void) {
 #ifdef DEBUG
 		m_Logger.Write (FromKernel, LogNotice, "Ejecutando instruccions CPU");
 #endif // DEBUG
-		for (unsigned int i=0; i < 10000; i++) {
+		for (unsigned int i=0; i < 50000; i++) {
 			z80emu->run();
 		}
 		m_ActLED.On();

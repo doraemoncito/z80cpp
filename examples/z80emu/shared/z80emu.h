@@ -39,6 +39,7 @@ public:
 
     void runTest(std::ifstream* f);
     void initialise(unsigned char const* base, size_t size);
+    void loadSnapshot(const uint8_t* snapshot);
     void run();
 
 };

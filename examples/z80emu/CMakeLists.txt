@@ -120,14 +120,14 @@ if( ${CMAKE_SYSTEM_NAME} MATCHES "Generic" )
         "-Wl,--end-group"
     )
 
-    # post cmake 3.13 we ca use
+    # post cmake 3.13 we ca use this:
     #target_link_options( z80emu PUBLIC "-T $(CIRCLEHOME)/circle.ld" )
 
     add_custom_command(TARGET ${PROJECT_NAME}
         # Run after the kernel has been built
         POST_BUILD
         COMMAND ${CROSS_COMPILE}objdump -d ${PROJECT_NAME} | ${CROSS_COMPILE}c++filt > kernel.lst
-        COMMENT "  DUMP  kernel.lst"
+        COMMENT "  DUMP   kernel.lst"
         VERBATIM
     )
 
@@ -135,7 +135,7 @@ if( ${CMAKE_SYSTEM_NAME} MATCHES "Generic" )
         # Run after the kernel has been built
         POST_BUILD
         COMMAND ${CROSS_COMPILE}objcopy ${PROJECT_NAME} -O binary kernel.img
-        COMMENT "  COPY  kernel.img"
+        COMMENT "  COPY   kernel.img"
         VERBATIM
     )
 
@@ -143,7 +143,7 @@ if( ${CMAKE_SYSTEM_NAME} MATCHES "Generic" )
         # Run after the kernel has been built
         POST_BUILD
         COMMAND wc -c < kernel.img
-        COMMENT "  WC    kernel.img => "
+        COMMENT "  WC     kernel.img => "
         VERBATIM
     )
 

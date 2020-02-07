@@ -12,11 +12,23 @@ uint32_t bswap32(uint32_t ulValue) {
     uint32_t word;
     word  = (uint32_t) ((ulValue >> 0x00) & 0xFF) << (24);  // low-low
     word |= (uint32_t) ((ulValue >> 0x08) & 0xFF) << (16);  // low-high
-    word |= (uint32_t) ((ulValue >> 0x10) & 0xFF) << (8); // high-low
-    word |= (uint32_t) ((ulValue >> 0x18) & 0xFF) << (0); // high-high
+    word |= (uint32_t) ((ulValue >> 0x10) & 0xFF) << (8);   // high-low
+    word |= (uint32_t) ((ulValue >> 0x18) & 0xFF) << (0);   // high-high
     return word;
 #endif
 };
+
+
+uint16_t bswap16(uint16_t usValue) {
+#if BYTE_SWAP_DISABLED
+    return usValue;
+#else
+    uint16_t word;
+    word  = (uint16_t) ((usValue >> 0x00) & 0xFF) << (8); // low
+    word |= (uint16_t) ((usValue >> 0x08) & 0xFF) << (0); // high
+    return word;
+#endif
+}
 
 
 void *memset(void *pBuffer, int nValue, size_t nLength) {     

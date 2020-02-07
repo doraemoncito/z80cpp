@@ -6,6 +6,7 @@
 //    quick & dirty conversion by dddddd (AKA deesix)
 
 #include "z80.h"
+#include <circle/util.h>
 
 // Constructor de la clase
 Z80::Z80(Z80operations *ops) {
@@ -165,6 +166,103 @@ void Z80::reset(void) {
     setIM(IntMode::IM0);
     lastFlagQ = false;
     prefixOpcode = 0x00;
+}
+
+// References:
+//
+// - http://rk.nvg.ntnu.no/sinclair/faq/fileform.html#SNA
+//
+// Load .SNA, .snap or .snapshot (Mirage Microdrive format used by many emulators)
+//
+// This format is the most well-supported of all snapshot formats (though Z80 is close on its heels) but has a drawback:
+//
+// As the program counter is pushed onto the stack so that a RETN instruction can restart the program, 2 bytes of memory
+// are overwritten. This will usually not matter; the game (or whatever) will have stack space that can be used for this.
+// However, if this space is all in use when the snap is made, memory below the stack space will be corrupted. According
+// to Rui Ribeiro, the effects of this can sometimes be avoided by replacing the corrupted bytes with zeros; e.g. take
+// the PC from the, stack pointer, replace that word with 0000 and then increment SP. This worked with snapshots of Batman,
+// Bounder and others which had been saved at critical points. Theoretically, this problem could cause a complete crash on
+// a real Spectrum if the stack pointer happened to be at address 16384; the push would try and write to the ROM. How
+// different emulators handle this is not something I know...
+//
+// When the registers have been loaded, a RETN command is required to start the program. IFF2 is short for interrupt
+// flip-flop 2, and for all practical purposes is the interrupt-enabled flag. Set means enabled.
+//
+//    Offset   Size   Description
+//    ------------------------------------------------------------------------
+//    0        1      byte   I
+//    1        8      word   HL',DE',BC',AF'
+//    9        10     word   HL,DE,BC,IY,IX
+//    19       1      byte   Interrupt (bit 2 contains IFF2, 1=EI/0=DI)
+//    20       1      byte   R
+//    21       4      words  AF,SP
+//    25       1      byte   IntMode (0=IM0/1=IM1/2=IM2)
+//    26       1      byte   BorderColor (0..7, not used by Spectrum 1.7)
+//    27       49152  bytes  RAM dump 16384..65535
+//    ------------------------------------------------------------------------
+//    Total: 49179 bytes
+//
+void Z80::resetSnapshot(const uint8_t* header) {
+    reset();
+
+    // then set the registers
+    // $00  I
+    // $01  HL'    
+    // $03  DE'
+    // $05  BC'
+    // $07  AF'
+    // $09  HL
+    // $0B  DE
+    // $0D  BC
+    // $0F  IY
+    // $11  IX
+    // $13  IFF2    [Only bit 2 is defined: 1 for EI, 0 for DI]
+    // $14  R
+    // $15  AF
+    // $17  SP
+    // $19  Interrupt mode: 0, 1 or 2
+    // $1A  Border colour
+
+    regI = header[0x00];
+
+    REG_HLx = *reinterpret_cast<const uint16_t *>(&header[0x01]);
+    REG_DEx = *reinterpret_cast<const uint16_t *>(&header[0x03]);
+    REG_BCx = *reinterpret_cast<const uint16_t *>(&header[0x05]);
+    REG_AFx = *reinterpret_cast<const uint16_t *>(&header[0x07]);
+
+    REG_HL = *reinterpret_cast<const uint16_t *>(&header[0x09]);
+    REG_DE = *reinterpret_cast<const uint16_t *>(&header[0x0B]);
+    REG_BC = *reinterpret_cast<const uint16_t *>(&header[0x0D]);
+    REG_IX = *reinterpret_cast<const uint16_t *>(&header[0x0F]);
+    REG_IY = *reinterpret_cast<const uint16_t *>(&header[0x11]);
+
+
+    bool isInterruptEnabled = (header[0x13] & 0x04) != 0;
+    ffIFF1 = isInterruptEnabled;
+    ffIFF2 = isInterruptEnabled;
+
+    regR = header[0x14];
+    regA = header[0x15];
+    setFlags(header[0x16]);
+
+    REG_SP = *reinterpret_cast<const uint16_t *>(&header[0x17]);
+
+    switch (header[0x19] & 0x03) {
+        case 0:
+            setIM(IntMode::IM0);
+            break;
+        case 1:
+            setIM(IntMode::IM1);
+            break;
+        case 2:
+            setIM(IntMode::IM2);
+            break;
+    }
+
+    // TODO: handle the boder colour at location header[0x1A]
+
+    //decodeED(0x7D); // Issue a RETN instruction to pop the return address from the stack
+    setRegPC(0x72); // dirección de RETN en la ROM
 }
 
 // Rota a la izquierda el valor del argumento

@@ -376,6 +376,9 @@ public:
     // Reset
     void reset(void);
 
+    // FIXME: pass a structure / class instead of snapshot memory
+    void resetSnapshot(const uint8_t* snapshot);
+
     // Execute one instruction
     void execute(void);
 
