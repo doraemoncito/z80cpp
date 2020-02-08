@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.5.1)
+cmake_minimum_required( VERSION 3.10.2 )
 project(z80screen LANGUAGES CXX)
 
 set(CMAKE_INCLUDE_CURRENT_DIR ON)

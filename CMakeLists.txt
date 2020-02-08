@@ -4,7 +4,7 @@
 #   cmake -G Xcode ..
 #
 
-cmake_minimum_required( VERSION 3.5.1 FATAL_ERROR )
+cmake_minimum_required( VERSION 3.10.2 )
 project( z80cpp LANGUAGES C CXX )
 
 # For the bare metal Raspberry Pi system we can only build the static library

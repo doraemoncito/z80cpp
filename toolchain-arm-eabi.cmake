@@ -2,7 +2,7 @@
 #
 # Invoke CMake with the arguments bellow to build the project for Rasperry PI:                                                              
 #                                                                                                                                           
-#   cmake -DCMAKE_TOOLCHAIN_FILE=../toolchain-arm-none-eabi.cmake ..
+#   cmake -DCMAKE_TOOLCHAIN_FILE=../toolchain-arm-eabi.cmake ..
 #                                                                                                                                           
 # the machine architecture of the compiler can be found by running:                                                                         
 #                                                                                                                                           
