@@ -2,3 +2,5 @@
 example/z80sim
 .vscode
 .DS_Store
+.idea
+cmake-build-*
