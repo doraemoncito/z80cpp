@@ -1,3 +1,5 @@
 /build/
+/cmake-build-*/
 example/z80sim
 .vscode/
+.idea
