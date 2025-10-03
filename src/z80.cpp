@@ -10,20 +10,20 @@
 // Constructor de la clase
 Z80::Z80(Z80operations *ops) {
 
-    bool evenBits;
-
     for (uint32_t idx = 0; idx < 256; idx++) {
 
         if (idx > 0x7f) {
             sz53n_addTable[idx] |= SIGN_MASK;
         }
 
-        evenBits = true;
-        for (uint8_t mask = 0x01; mask != 0; mask <<= 1) {
-            if ((idx & mask) != 0) {
-                evenBits = !evenBits;
-            }
+        // Calculate parity using Brian Kernighan's algorithm optimized for 8-bit
+        uint8_t bits = idx;
+        uint8_t count = 0;
+        while (bits) {
+            bits &= bits - 1;  // Clear the least significant bit set
+            count++;
         }
+        bool evenBits = (count & 1) == 0;
 
         sz53n_addTable[idx] |= (idx & FLAG_53_MASK);
         sz53n_subTable[idx] = sz53n_addTable[idx] | ADDSUB_MASK;
@@ -242,13 +242,11 @@ void Z80::inc8(uint8_t &oper8) {
 
     sz5h3pnFlags = sz53n_addTable[oper8];
 
-    if ((oper8 & 0x0f) == 0) {
-        sz5h3pnFlags |= HALFCARRY_MASK;
-    }
+    // Branchless: if ((oper8 & 0x0f) == 0) set HALFCARRY_MASK
+    sz5h3pnFlags |= (((oper8 & 0x0f) == 0) ? HALFCARRY_MASK : 0);
 
-    if (oper8 == 0x80) {
-        sz5h3pnFlags |= OVERFLOW_MASK;
-    }
+    // Branchless: if (oper8 == 0x80) set OVERFLOW_MASK
+    sz5h3pnFlags |= ((oper8 == 0x80) ? OVERFLOW_MASK : 0);
 
     flagQ = true;
 }
@@ -259,13 +257,11 @@ void Z80::dec8(uint8_t &oper8) {
 
     sz5h3pnFlags = sz53n_subTable[oper8];
 
-    if ((oper8 & 0x0f) == 0x0f) {
-        sz5h3pnFlags |= HALFCARRY_MASK;
-    }
+    // Branchless: if ((oper8 & 0x0f) == 0x0f) set HALFCARRY_MASK
+    sz5h3pnFlags |= (((oper8 & 0x0f) == 0x0f) ? HALFCARRY_MASK : 0);
 
-    if (oper8 == 0x7f) {
-        sz5h3pnFlags |= OVERFLOW_MASK;
-    }
+    // Branchless: if (oper8 == 0x7f) set OVERFLOW_MASK
+    sz5h3pnFlags |= ((oper8 == 0x7f) ? OVERFLOW_MASK : 0);
 
     flagQ = true;
 }
@@ -281,13 +277,9 @@ void Z80::add(uint8_t oper8) {
     /* El módulo 16 del resultado será menor que el módulo 16 del registro A
      * si ha habido HalfCarry. Sucede lo mismo para todos los métodos suma
      * SIN carry */
-    if ((res & 0x0f) < (regA & 0x0f)) {
-        sz5h3pnFlags |= HALFCARRY_MASK;
-    }
+    sz5h3pnFlags |= (((res & 0x0f) < (regA & 0x0f)) ? HALFCARRY_MASK : 0);
 
-    if (((regA ^ ~oper8) & (regA ^ res)) > 0x7f) {
-        sz5h3pnFlags |= OVERFLOW_MASK;
-    }
+    sz5h3pnFlags |= ((((regA ^ ~oper8) & (regA ^ res)) > 0x7f) ? OVERFLOW_MASK : 0);
 
     regA = res;
     flagQ = true;
@@ -305,13 +297,9 @@ void Z80::adc(uint8_t oper8) {
     res &= 0xff;
     sz5h3pnFlags = sz53n_addTable[res];
 
-    if (((regA ^ oper8 ^ res) & 0x10) != 0) {
-        sz5h3pnFlags |= HALFCARRY_MASK;
-    }
+    sz5h3pnFlags |= ((((regA ^ oper8 ^ res) & 0x10) != 0) ? HALFCARRY_MASK : 0);
 
-    if (((regA ^ ~oper8) & (regA ^ res)) > 0x7f) {
-        sz5h3pnFlags |= OVERFLOW_MASK;
-    }
+    sz5h3pnFlags |= ((((regA ^ ~oper8) & (regA ^ res)) > 0x7f) ? OVERFLOW_MASK : 0);
 
     regA = res;
     flagQ = true;
@@ -326,9 +314,7 @@ void Z80::add16(RegisterPair &reg16, uint16_t oper16) {
     reg16.word = tmp;
     sz5h3pnFlags = (sz5h3pnFlags & FLAG_SZP_MASK) | ((reg16.word >> 8) & FLAG_53_MASK);
 
-    if ((reg16.word & 0x0fff) < (oper16 & 0x0fff)) {
-        sz5h3pnFlags |= HALFCARRY_MASK;
-    }
+    sz5h3pnFlags |= (((reg16.word & 0x0fff) < (oper16 & 0x0fff)) ? HALFCARRY_MASK : 0);
 
     flagQ = true;
 }
@@ -352,13 +338,9 @@ void Z80::adc16(uint16_t reg16) {
         sz5h3pnFlags &= ~ZERO_MASK;
     }
 
-    if (((res ^ tmpHL ^ reg16) & 0x1000) != 0) {
-        sz5h3pnFlags |= HALFCARRY_MASK;
-    }
+    sz5h3pnFlags |= ((((res ^ tmpHL ^ reg16) & 0x1000) != 0) ? HALFCARRY_MASK : 0);
 
-    if (((tmpHL ^ ~reg16) & (tmpHL ^ res)) > 0x7fff) {
-        sz5h3pnFlags |= OVERFLOW_MASK;
-    }
+    sz5h3pnFlags |= ((((tmpHL ^ ~reg16) & (tmpHL ^ res)) > 0x7fff) ? OVERFLOW_MASK : 0);
 
     flagQ = true;
 }
@@ -374,13 +356,9 @@ void Z80::sub(uint8_t oper8) {
     /* El módulo 16 del resultado será mayor que el módulo 16 del registro A
      * si ha habido HalfCarry. Sucede lo mismo para todos los métodos resta
      * SIN carry, incluido cp */
-    if ((res & 0x0f) > (regA & 0x0f)) {
-        sz5h3pnFlags |= HALFCARRY_MASK;
-    }
+    sz5h3pnFlags |= (((res & 0x0f) > (regA & 0x0f)) ? HALFCARRY_MASK : 0);
 
-    if (((regA ^ oper8) & (regA ^ res)) > 0x7f) {
-        sz5h3pnFlags |= OVERFLOW_MASK;
-    }
+    sz5h3pnFlags |= ((((regA ^ oper8) & (regA ^ res)) > 0x7f) ? OVERFLOW_MASK : 0);
 
     regA = res;
     flagQ = true;
@@ -398,13 +376,9 @@ void Z80::sbc(uint8_t oper8) {
     res &= 0xff;
     sz5h3pnFlags = sz53n_subTable[res];
 
-    if (((regA ^ oper8 ^ res) & 0x10) != 0) {
-        sz5h3pnFlags |= HALFCARRY_MASK;
-    }
+    sz5h3pnFlags |= ((((regA ^ oper8 ^ res) & 0x10) != 0) ? HALFCARRY_MASK : 0);
 
-    if (((regA ^ oper8) & (regA ^ res)) > 0x7f) {
-        sz5h3pnFlags |= OVERFLOW_MASK;
-    }
+    sz5h3pnFlags |= ((((regA ^ oper8) & (regA ^ res)) > 0x7f) ? OVERFLOW_MASK : 0);
 
     regA = res;
     flagQ = true;
@@ -429,13 +403,9 @@ void Z80::sbc16(uint16_t reg16) {
         sz5h3pnFlags &= ~ZERO_MASK;
     }
 
-    if (((res ^ tmpHL ^ reg16) & 0x1000) != 0) {
-        sz5h3pnFlags |= HALFCARRY_MASK;
-    }
+    sz5h3pnFlags |= ((((res ^ tmpHL ^ reg16) & 0x1000) != 0) ? HALFCARRY_MASK : 0);
 
-    if (((tmpHL ^ reg16) & (tmpHL ^ res)) > 0x7fff) {
-        sz5h3pnFlags |= OVERFLOW_MASK;
-    }
+    sz5h3pnFlags |= ((((tmpHL ^ reg16) & (tmpHL ^ res)) > 0x7fff) ? OVERFLOW_MASK : 0);
     flagQ = true;
 }
 
@@ -477,13 +447,9 @@ void Z80::cp(uint8_t oper8) {
             | // No necesito preservar H, pero está a 0 en la tabla de todas formas
             (sz53n_subTable[res] & FLAG_SZHN_MASK);
 
-    if ((res & 0x0f) > (regA & 0x0f)) {
-        sz5h3pnFlags |= HALFCARRY_MASK;
-    }
+    sz5h3pnFlags |= (((res & 0x0f) > (regA & 0x0f)) ? HALFCARRY_MASK : 0);
 
-    if (((regA ^ oper8) & (regA ^ res)) > 0x7f) {
-        sz5h3pnFlags |= OVERFLOW_MASK;
-    }
+    sz5h3pnFlags |= ((((regA ^ oper8) & (regA ^ res)) > 0x7f) ? OVERFLOW_MASK : 0);
 
     flagQ = true;
 }
@@ -1325,9 +1291,7 @@ void Z80::decodeOpcode(uint8_t opCode) {
         { /* CCF */
             uint8_t regQ = lastFlagQ ? sz5h3pnFlags : 0;
             sz5h3pnFlags = (sz5h3pnFlags & FLAG_SZP_MASK) | (((regQ ^ sz5h3pnFlags) | regA) & FLAG_53_MASK);
-            if (carryFlag) {
-                sz5h3pnFlags |= HALFCARRY_MASK;
-            }
+            sz5h3pnFlags |= (-carryFlag & HALFCARRY_MASK);
             carryFlag = !carryFlag;
             flagQ = true;
             break;
