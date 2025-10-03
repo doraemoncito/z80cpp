@@ -60,59 +60,31 @@ RegisterPair Z80::getPairIR() const {
 }
 
 void Z80::setAddSubFlag(bool state) {
-    if (state) {
-        sz5h3pnFlags |= ADDSUB_MASK;
-    } else {
-        sz5h3pnFlags &= ~ADDSUB_MASK;
-    }
+    sz5h3pnFlags = (sz5h3pnFlags & ~ADDSUB_MASK) | (-state & ADDSUB_MASK);
 }
 
 void Z80::setParOverFlag(bool state) {
-    if (state) {
-        sz5h3pnFlags |= PARITY_MASK;
-    } else {
-        sz5h3pnFlags &= ~PARITY_MASK;
-    }
+    sz5h3pnFlags = (sz5h3pnFlags & ~PARITY_MASK) | (-state & PARITY_MASK);
 }
 
 void Z80::setBit3Fag(bool state) {
-    if (state) {
-        sz5h3pnFlags |= BIT3_MASK;
-    } else {
-        sz5h3pnFlags &= ~BIT3_MASK;
-    }
+    sz5h3pnFlags = (sz5h3pnFlags & ~BIT3_MASK) | (-state & BIT3_MASK);
 }
 
 void Z80::setHalfCarryFlag(bool state) {
-    if (state) {
-        sz5h3pnFlags |= HALFCARRY_MASK;
-    } else {
-        sz5h3pnFlags &= ~HALFCARRY_MASK;
-    }
+    sz5h3pnFlags = (sz5h3pnFlags & ~HALFCARRY_MASK) | (-state & HALFCARRY_MASK);
 }
 
 void Z80::setBit5Flag(bool state) {
-    if (state) {
-        sz5h3pnFlags |= BIT5_MASK;
-    } else {
-        sz5h3pnFlags &= ~BIT5_MASK;
-    }
+    sz5h3pnFlags = (sz5h3pnFlags & ~BIT5_MASK) | (-state & BIT5_MASK);
 }
 
 void Z80::setZeroFlag(bool state) {
-    if (state) {
-        sz5h3pnFlags |= ZERO_MASK;
-    } else {
-        sz5h3pnFlags &= ~ZERO_MASK;
-    }
+    sz5h3pnFlags = (sz5h3pnFlags & ~ZERO_MASK) | (-state & ZERO_MASK);
 }
 
 void Z80::setSignFlag(bool state) {
-    if (state) {
-        sz5h3pnFlags |= SIGN_MASK;
-    } else {
-        sz5h3pnFlags &= ~SIGN_MASK;
-    }
+    sz5h3pnFlags = (sz5h3pnFlags & ~SIGN_MASK) | (-state & SIGN_MASK);
 }
 
 // Reset
@@ -166,11 +138,8 @@ void Z80::reset() {
 // Rota a la izquierda el valor del argumento
 // El bit 0 y el flag C toman el valor del bit 7 antes de la operación
 void Z80::rlc(uint8_t &oper8) {
-    carryFlag = (oper8 > 0x7f);
-    oper8 <<= 1;
-    if (carryFlag) {
-        oper8 |= CARRY_MASK;
-    }
+    carryFlag = (oper8 & 0x80) != 0;
+    oper8 = (oper8 << 1) | carryFlag;
     sz5h3pnFlags = sz53pn_addTable[oper8];
     flagQ = true;
 }
@@ -179,11 +148,8 @@ void Z80::rlc(uint8_t &oper8) {
 // El bit 0 toma el valor del flag C antes de la operación
 void Z80::rl(uint8_t &oper8) {
     bool carry = carryFlag;
-    carryFlag = (oper8 > 0x7f);
-    oper8 <<= 1;
-    if (carry) {
-        oper8 |= CARRY_MASK;
-    }
+    carryFlag = (oper8 & 0x80) != 0;
+    oper8 = (oper8 << 1) | carry;
     sz5h3pnFlags = sz53pn_addTable[oper8];
     flagQ = true;
 }
@@ -192,7 +158,7 @@ void Z80::rl(uint8_t &oper8) {
 // El bit 7 va al carry flag
 // El bit 0 toma el valor 0
 void Z80::sla(uint8_t &oper8) {
-    carryFlag = (oper8 > 0x7f);
+    carryFlag = (oper8 & 0x80) != 0;
     oper8 <<= 1;
     sz5h3pnFlags = sz53pn_addTable[oper8];
     flagQ = true;
@@ -203,9 +169,8 @@ void Z80::sla(uint8_t &oper8) {
 // El bit 0 toma el valor 1
 // Instrucción indocumentada
 void Z80::sll(uint8_t &oper8) {
-    carryFlag = (oper8 > 0x7f);
-    oper8 <<= 1;
-    oper8 |= CARRY_MASK;
+    carryFlag = (oper8 & 0x80) != 0;
+    oper8 = (oper8 << 1) | CARRY_MASK;
     sz5h3pnFlags = sz53pn_addTable[oper8];
     flagQ = true;
 }
@@ -214,10 +179,7 @@ void Z80::sll(uint8_t &oper8) {
 // El bit 7 y el flag C toman el valor del bit 0 antes de la operación
 void Z80::rrc(uint8_t &oper8) {
     carryFlag = (oper8 & CARRY_MASK) != 0;
-    oper8 >>= 1;
-    if (carryFlag) {
-        oper8 |= SIGN_MASK;
-    }
+    oper8 = (oper8 >> 1) | (carryFlag << 7);
     sz5h3pnFlags = sz53pn_addTable[oper8];
     flagQ = true;
 }
@@ -228,10 +190,7 @@ void Z80::rrc(uint8_t &oper8) {
 void Z80::rr(uint8_t &oper8) {
     bool carry = carryFlag;
     carryFlag = (oper8 & CARRY_MASK) != 0;
-    oper8 >>= 1;
-    if (carry) {
-        oper8 |= SIGN_MASK;
-    }
+    oper8 = (oper8 >> 1) | (carry << 7);
     sz5h3pnFlags = sz53pn_addTable[oper8];
     flagQ = true;
 }
@@ -981,11 +940,8 @@ void Z80::decodeOpcode(uint8_t opCode) {
         }
         case 0x07:
         { /* RLCA */
-            carryFlag = (regA > 0x7f);
-            regA <<= 1;
-            if (carryFlag) {
-                regA |= CARRY_MASK;
-            }
+            carryFlag = (regA & 0x80) != 0;
+            regA = (regA << 1) | carryFlag;
             sz5h3pnFlags = (sz5h3pnFlags & FLAG_SZP_MASK) | (regA & FLAG_53_MASK);
             flagQ = true;
             break;
@@ -1038,10 +994,7 @@ void Z80::decodeOpcode(uint8_t opCode) {
         case 0x0F:
         { /* RRCA */
             carryFlag = (regA & CARRY_MASK) != 0;
-            regA >>= 1;
-            if (carryFlag) {
-                regA |= SIGN_MASK;
-            }
+            regA = (regA >> 1) | (carryFlag << 7);
             sz5h3pnFlags = (sz5h3pnFlags & FLAG_SZP_MASK) | (regA & FLAG_53_MASK);
             flagQ = true;
             break;
@@ -1097,11 +1050,8 @@ void Z80::decodeOpcode(uint8_t opCode) {
         case 0x17:
         { /* RLA */
             bool oldCarry = carryFlag;
-            carryFlag = regA > 0x7f;
-            regA <<= 1;
-            if (oldCarry) {
-                regA |= CARRY_MASK;
-            }
+            carryFlag = (regA & 0x80) != 0;
+            regA = (regA << 1) | oldCarry;
             sz5h3pnFlags = (sz5h3pnFlags & FLAG_SZP_MASK) | (regA & FLAG_53_MASK);
             flagQ = true;
             break;
@@ -1151,10 +1101,7 @@ void Z80::decodeOpcode(uint8_t opCode) {
         { /* RRA */
             bool oldCarry = carryFlag;
             carryFlag = (regA & CARRY_MASK) != 0;
-            regA >>= 1;
-            if (oldCarry) {
-                regA |= SIGN_MASK;
-            }
+            regA = (regA >> 1) | (oldCarry << 7);
             sz5h3pnFlags = (sz5h3pnFlags & FLAG_SZP_MASK) | (regA & FLAG_53_MASK);
             flagQ = true;
             break;
