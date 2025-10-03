@@ -1,5 +1,6 @@
+.cache/
+.idea/
+.vscode/
 build*/
 cmake-build*/
-.vscode/
-.idea/
 example/z80sim
