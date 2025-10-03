@@ -600,9 +600,7 @@ void Z80::ini() {
     REG_HL++;
 
     sz5h3pnFlags = sz53pn_addTable[REG_B];
-    if (work8 > 0x7f) {
-        sz5h3pnFlags |= ADDSUB_MASK;
-    }
+    sz5h3pnFlags |= (((work8 & 0x80) != 0) ? ADDSUB_MASK : 0);
 
     carryFlag = false;
     uint16_t tmp = work8 + ((REG_C + 1) & 0xff);
@@ -631,9 +629,7 @@ void Z80::ind() {
     REG_HL--;
 
     sz5h3pnFlags = sz53pn_addTable[REG_B];
-    if (work8 > 0x7f) {
-        sz5h3pnFlags |= ADDSUB_MASK;
-    }
+    sz5h3pnFlags |= (((work8 & 0x80) != 0) ? ADDSUB_MASK : 0);
 
     carryFlag = false;
     uint16_t tmp = work8 + ((REG_C - 1) & 0xff);
@@ -665,7 +661,7 @@ void Z80::outi() {
     REG_HL++;
 
     carryFlag = false;
-    if (work8 > 0x7f) {
+    if ((work8 & 0x80) != 0) {
         sz5h3pnFlags = sz53n_subTable[REG_B];
     } else {
         sz5h3pnFlags = sz53n_addTable[REG_B];
@@ -697,7 +693,7 @@ void Z80::outd() {
     REG_HL--;
 
     carryFlag = false;
-    if (work8 > 0x7f) {
+    if ((work8 & 0x80) != 0) {
         sz5h3pnFlags = sz53n_subTable[REG_B];
     } else {
         sz5h3pnFlags = sz53n_addTable[REG_B];
@@ -2327,7 +2323,7 @@ void Z80::decodeOpcode(uint8_t opCode) {
             break;
         case 0xF8: /* RET M */
             Z80opsImpl->addressOnBus(getPairIR().word, 1);
-            if (sz5h3pnFlags > 0x7f) {
+            if ((sz5h3pnFlags & SIGN_MASK) != 0) {
                 REG_PC = REG_WZ = pop();
             }
             break;
@@ -2337,7 +2333,7 @@ void Z80::decodeOpcode(uint8_t opCode) {
             break;
         case 0xFA: /* JP M,nn */
             REG_WZ = Z80opsImpl->peek16(REG_PC);
-            if (sz5h3pnFlags > 0x7f) {
+            if ((sz5h3pnFlags & SIGN_MASK) != 0) {
                 REG_PC = REG_WZ;
                 break;
             }
@@ -2349,7 +2345,7 @@ void Z80::decodeOpcode(uint8_t opCode) {
             break;
         case 0xFC: /* CALL M,nn */
             REG_WZ = Z80opsImpl->peek16(REG_PC);
-            if (sz5h3pnFlags > 0x7f) {
+            if ((sz5h3pnFlags & SIGN_MASK) != 0) {
                 Z80opsImpl->addressOnBus(REG_PC + 1, 1);
                 push(REG_PC + 2);
                 REG_PC = REG_WZ;
