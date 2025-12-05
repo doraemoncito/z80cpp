@@ -1,11 +1,11 @@
 #ifndef Z80SIM_H
 #define Z80SIM_H
 
-#include <iostream>
 #include <fstream>
+#include <iostream>
 
-#include "z80.h"
-#include "z80operations.h"
+#include "../include/z80.h"
+#include "../include/z80operations.h"
 
 class Z80sim : public Z80operations
 {

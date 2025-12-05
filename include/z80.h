@@ -328,7 +328,7 @@ public:
 
     /* Undocumented flag */
     bool isBit3Flag() const { return (sz5h3pnFlags & BIT3_MASK) != 0; }
-    void setBit3Fag(bool state);
+    void setBit3Flag(bool state);
 
     bool isHalfCarryFlag() const { return (sz5h3pnFlags & HALFCARRY_MASK) != 0; }
     void setHalfCarryFlag(bool state);

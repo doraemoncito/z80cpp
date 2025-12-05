@@ -94,14 +94,14 @@ uint8_t Z80sim::breakpoint(uint16_t address, uint8_t opcode) {
         }
         case 2: // BDOS 2 console char output
         {
-            cout << (char) cpu.getRegE();
+            cout << static_cast<char>(cpu.getRegE());
             break;
         }
         case 9: // BDOS 9 console string output (string terminated by "$")
         {
             uint16_t strAddr = cpu.getRegDE();
             while (z80Ram[strAddr] != '$') {
-                cout << (char) z80Ram[strAddr++];
+                cout << static_cast<char>(z80Ram[strAddr++]);
             }
             cout.flush();
             break;
@@ -127,7 +127,7 @@ void Z80sim::runTest(std::ifstream* f) {
     size = f->tellg();
     cout << "Test size: " << size << endl;
     f->seekg(0, ios::beg);
-    f->read((char *) &z80Ram[0x100], size);
+    f->read(reinterpret_cast<char*>(&z80Ram[0x100]), size);
     f->close();
 
 #ifdef WITH_BREAKPOINT_SUPPORT
@@ -137,10 +137,10 @@ void Z80sim::runTest(std::ifstream* f) {
     cpu.reset();
     finish = false;
 
-    z80Ram[0] = (uint8_t) 0xC3;
+    z80Ram[0] = static_cast<uint8_t>(0xC3);
     z80Ram[1] = 0x00;
     z80Ram[2] = 0x01; // JP 0x100 CP/M TPA
-    z80Ram[5] = (uint8_t) 0xC9; // Return from BDOS call
+    z80Ram[5] = static_cast<uint8_t>(0xC9); // Return from BDOS call
 
     while (!finish) {
         cpu.execute();
