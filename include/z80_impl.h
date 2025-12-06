@@ -1,3 +1,19 @@
+// Z80 CPU Core - Template Implementation
+// This file is automatically included by z80.h
+// Do not include directly
+
+#ifndef Z80_IMPL_H
+#define Z80_IMPL_H
+
+// ============================================================================
+// CASE_OPCODE Macro - Switchable Dispatch Mechanism
+// ============================================================================
+#if defined(__GNUC__) || defined(__clang__)
+    #define CASE_OPCODE(hex, desc) label_##hex /* desc */
+#else
+    #define CASE_OPCODE(hex, desc) case hex /* desc */
+#endif
+
 // Converted to C++ from Java at
 //... https://github.com/jsanchezv/Z80Core
 //... commit c4f267e3564fa89bd88fd2d1d322f4d6b0069dbd
@@ -5,10 +21,10 @@
 //... v1.0.0 (13/02/2017)
 //    quick & dirty conversion by dddddd (AKA deesix)
 
-#include "z80.h"
 
 // Constructor de la clase
-Z80::Z80(Z80operations *ops) {
+template<typename Derived>
+Z80<Derived>::Z80(Derived *ops) {
     for (uint32_t idx = 0; idx < 256; idx++) {
 
         if (idx > 0x7f) {
@@ -44,50 +60,57 @@ Z80::Z80(Z80operations *ops) {
     reset();
 }
 
-Z80::~Z80() = default;
+template<typename Derived>
+Z80<Derived>::~Z80() = default;
 
-RegisterPair Z80::getPairIR() const {
+// Optimized getPairIR - still returns RegisterPair for compatibility
+// but uses branchless implementation
+template<typename Derived>
+RegisterPair Z80<Derived>::getPairIR() const {
     RegisterPair IR;
-    IR.byte8.hi = regI;
-    IR.byte8.lo = regR & 0x7f;
-    if (regRbit7) {
-        IR.byte8.lo |= SIGN_MASK;
-    }
+    IR.word = getIRWord();
     return IR;
 }
 
-void Z80::setAddSubFlag(bool state) {
+template<typename Derived>
+void Z80<Derived>::setAddSubFlag(bool state) {
     // Branchless flag update to reduce mispredictions in hot paths
     const uint8_t m = state ? 0xFF : 0x00;
     sz5h3pnFlags = static_cast<uint8_t>((sz5h3pnFlags & static_cast<uint8_t>(~ADDSUB_MASK)) | (m & ADDSUB_MASK));
 }
 
-void Z80::setParOverFlag(bool state) {
+template<typename Derived>
+void Z80<Derived>::setParOverFlag(bool state) {
     const uint8_t m = state ? 0xFF : 0x00;
     sz5h3pnFlags = static_cast<uint8_t>((sz5h3pnFlags & static_cast<uint8_t>(~PARITY_MASK)) | (m & PARITY_MASK));
 }
 
-void Z80::setBit3Flag(bool state) {
+template<typename Derived>
+void Z80<Derived>::setBit3Flag(bool state) {
     const uint8_t m = state ? 0xFF : 0x00;
     sz5h3pnFlags = static_cast<uint8_t>((sz5h3pnFlags & static_cast<uint8_t>(~BIT3_MASK)) | (m & BIT3_MASK));
 }
 
-void Z80::setHalfCarryFlag(bool state) {
+template<typename Derived>
+void Z80<Derived>::setHalfCarryFlag(bool state) {
     const uint8_t m = state ? 0xFF : 0x00;
     sz5h3pnFlags = static_cast<uint8_t>((sz5h3pnFlags & static_cast<uint8_t>(~HALFCARRY_MASK)) | (m & HALFCARRY_MASK));
 }
 
-void Z80::setBit5Flag(bool state) {
+template<typename Derived>
+void Z80<Derived>::setBit5Flag(bool state) {
     const uint8_t m = state ? 0xFF : 0x00;
     sz5h3pnFlags = static_cast<uint8_t>((sz5h3pnFlags & static_cast<uint8_t>(~BIT5_MASK)) | (m & BIT5_MASK));
 }
 
-void Z80::setZeroFlag(bool state) {
+template<typename Derived>
+void Z80<Derived>::setZeroFlag(bool state) {
     const uint8_t m = state ? 0xFF : 0x00;
     sz5h3pnFlags = static_cast<uint8_t>((sz5h3pnFlags & static_cast<uint8_t>(~ZERO_MASK)) | (m & ZERO_MASK));
 }
 
-void Z80::setSignFlag(bool state) {
+template<typename Derived>
+void Z80<Derived>::setSignFlag(bool state) {
     const uint8_t m = state ? 0xFF : 0x00;
     sz5h3pnFlags = static_cast<uint8_t>((sz5h3pnFlags & static_cast<uint8_t>(~SIGN_MASK)) | (m & SIGN_MASK));
 }
@@ -107,7 +130,8 @@ void Z80::setSignFlag(bool state) {
  *             modelo Zilog Z8400APS. Z80A CPU.
  *             http://www.worldofspectrum.org/forums/showthread.php?t=34574
  */
-void Z80::reset() {
+template<typename Derived>
+void Z80<Derived>::reset() {
     if (pinReset) {
         pinReset = false;
     } else {
@@ -142,25 +166,22 @@ void Z80::reset() {
 
 // Rota a la izquierda el valor del argumento
 // El bit 0 y el flag C toman el valor del bit 7 antes de la operación
-void Z80::rlc(uint8_t &oper8) {
+template<typename Derived>
+Z80_FORCE_INLINE void Z80<Derived>::rlc(uint8_t &oper8) {
     carryFlag = (oper8 > 0x7f);
     oper8 <<= 1;
-    if (carryFlag) {
-        oper8 |= CARRY_MASK;
-    }
+    oper8 |= carryFlag;  // Branchless: add carry bit
     sz5h3pnFlags = sz53pn_addTable[oper8];
     flagQ = true;
 }
 // Rota a la izquierda el valor del argumento
 // El bit 7 va al carry flag
 // El bit 0 toma el valor del flag C antes de la operación
-void Z80::rl(uint8_t &oper8) {
-    bool carry = carryFlag;
+template<typename Derived>
+Z80_FORCE_INLINE void Z80<Derived>::rl(uint8_t &oper8) {
+    bool oldCarry = carryFlag;
     carryFlag = (oper8 > 0x7f);
-    oper8 <<= 1;
-    if (carry) {
-        oper8 |= CARRY_MASK;
-    }
+    oper8 = (oper8 << 1) | oldCarry;  // Branchless
     sz5h3pnFlags = sz53pn_addTable[oper8];
     flagQ = true;
 }
@@ -168,7 +189,8 @@ void Z80::rl(uint8_t &oper8) {
 // Rota a la izquierda el valor del argumento
 // El bit 7 va al carry flag
 // El bit 0 toma el valor 0
-void Z80::sla(uint8_t &oper8) {
+template<typename Derived>
+Z80_FORCE_INLINE void Z80<Derived>::sla(uint8_t &oper8) {
     carryFlag = (oper8 > 0x7f);
     oper8 <<= 1;
     sz5h3pnFlags = sz53pn_addTable[oper8];
@@ -179,22 +201,20 @@ void Z80::sla(uint8_t &oper8) {
 // El bit 7 va al carry flag
 // El bit 0 toma el valor 1
 // Instrucción indocumentada
-void Z80::sll(uint8_t &oper8) {
+template<typename Derived>
+Z80_FORCE_INLINE void Z80<Derived>::sll(uint8_t &oper8) {
     carryFlag = (oper8 > 0x7f);
-    oper8 <<= 1;
-    oper8 |= CARRY_MASK;
+    oper8 = (oper8 << 1) | CARRY_MASK;
     sz5h3pnFlags = sz53pn_addTable[oper8];
     flagQ = true;
 }
 
 // Rota a la derecha el valor del argumento
 // El bit 7 y el flag C toman el valor del bit 0 antes de la operación
-void Z80::rrc(uint8_t &oper8) {
+template<typename Derived>
+Z80_FORCE_INLINE void Z80<Derived>::rrc(uint8_t &oper8) {
     carryFlag = (oper8 & CARRY_MASK) != 0;
-    oper8 >>= 1;
-    if (carryFlag) {
-        oper8 |= SIGN_MASK;
-    }
+    oper8 = (oper8 >> 1) | (carryFlag << 7);  // Branchless
     sz5h3pnFlags = sz53pn_addTable[oper8];
     flagQ = true;
 }
@@ -202,13 +222,11 @@ void Z80::rrc(uint8_t &oper8) {
 // Rota a la derecha el valor del argumento
 // El bit 0 va al carry flag
 // El bit 7 toma el valor del flag C antes de la operación
-void Z80::rr(uint8_t &oper8) {
-    bool carry = carryFlag;
+template<typename Derived>
+Z80_FORCE_INLINE void Z80<Derived>::rr(uint8_t &oper8) {
+    bool oldCarry = carryFlag;
     carryFlag = (oper8 & CARRY_MASK) != 0;
-    oper8 >>= 1;
-    if (carry) {
-        oper8 |= SIGN_MASK;
-    }
+    oper8 = (oper8 >> 1) | (oldCarry << 7);  // Branchless
     sz5h3pnFlags = sz53pn_addTable[oper8];
     flagQ = true;
 }
@@ -216,10 +234,10 @@ void Z80::rr(uint8_t &oper8) {
 // Rota a la derecha 1 bit el valor del argumento
 // El bit 0 pasa al carry.
 // El bit 7 conserva el valor que tenga
-void Z80::sra(uint8_t &oper8) {
-    uint8_t sign = oper8 & SIGN_MASK;
+template<typename Derived>
+Z80_FORCE_INLINE void Z80<Derived>::sra(uint8_t &oper8) {
     carryFlag = (oper8 & CARRY_MASK) != 0;
-    oper8 = (oper8 >> 1) | sign;
+    oper8 = (oper8 >> 1) | (oper8 & SIGN_MASK);  // Preserve sign bit
     sz5h3pnFlags = sz53pn_addTable[oper8];
     flagQ = true;
 }
@@ -227,7 +245,8 @@ void Z80::sra(uint8_t &oper8) {
 // Rota a la derecha 1 bit el valor del argumento
 // El bit 0 pasa al carry.
 // El bit 7 toma el valor 0
-void Z80::srl(uint8_t &oper8) {
+template<typename Derived>
+Z80_FORCE_INLINE void Z80<Derived>::srl(uint8_t &oper8) {
     carryFlag = (oper8 & CARRY_MASK) != 0;
     oper8 >>= 1;
     sz5h3pnFlags = sz53pn_addTable[oper8];
@@ -255,88 +274,82 @@ void Z80::srl(uint8_t &oper8) {
  * V_FLAG = RESULT == 0x7F
  */
 // Incrementa un valor de 8 bits modificando los flags oportunos
-void Z80::inc8(uint8_t &oper8) {
+// Branchless version for better pipeline performance
+template<typename Derived>
+Z80_FORCE_INLINE void Z80<Derived>::inc8(uint8_t &oper8) {
     oper8++;
 
     sz5h3pnFlags = sz53n_addTable[oper8];
 
-    if ((oper8 & 0x0f) == 0) {
-        sz5h3pnFlags |= HALFCARRY_MASK;
-    }
+    // Branchless half-carry: set if low nibble wrapped to 0
+    sz5h3pnFlags |= (((oper8 & 0x0f) == 0) * HALFCARRY_MASK);
 
-    if (oper8 == 0x80) {
-        sz5h3pnFlags |= OVERFLOW_MASK;
-    }
+    // Branchless overflow: set if result is exactly 0x80
+    sz5h3pnFlags |= ((oper8 == 0x80) * OVERFLOW_MASK);
 
     flagQ = true;
 }
 
 // Decrementa un valor de 8 bits modificando los flags oportunos
-void Z80::dec8(uint8_t &oper8) {
+// Branchless version for better pipeline performance
+template<typename Derived>
+Z80_FORCE_INLINE void Z80<Derived>::dec8(uint8_t &oper8) {
     oper8--;
 
     sz5h3pnFlags = sz53n_subTable[oper8];
 
-    if ((oper8 & 0x0f) == 0x0f) {
-        sz5h3pnFlags |= HALFCARRY_MASK;
-    }
+    // Branchless half-carry: set if low nibble wrapped to 0x0f
+    sz5h3pnFlags |= (((oper8 & 0x0f) == 0x0f) * HALFCARRY_MASK);
 
-    if (oper8 == 0x7f) {
-        sz5h3pnFlags |= OVERFLOW_MASK;
-    }
+    // Branchless overflow: set if result is exactly 0x7f
+    sz5h3pnFlags |= ((oper8 == 0x7f) * OVERFLOW_MASK);
 
     flagQ = true;
 }
 
 // Suma de 8 bits afectando a los flags
-void Z80::add(uint8_t oper8) {
+// Branchless version for better pipeline performance
+template<typename Derived>
+Z80_FORCE_INLINE void Z80<Derived>::add(uint8_t oper8) {
     uint16_t res = regA + oper8;
 
     carryFlag = res > 0xff;
     res &= 0xff;
     sz5h3pnFlags = sz53n_addTable[res];
 
-    /* El módulo 16 del resultado será menor que el módulo 16 del registro A
-     * si ha habido HalfCarry. Sucede lo mismo para todos los métodos suma
-     * SIN carry */
-    if ((res & 0x0f) < (regA & 0x0f)) {
-        sz5h3pnFlags |= HALFCARRY_MASK;
-    }
+    // Branchless half-carry check
+    sz5h3pnFlags |= (((res & 0x0f) < (regA & 0x0f)) * HALFCARRY_MASK);
 
-    if (((regA ^ ~oper8) & (regA ^ res)) > 0x7f) {
-        sz5h3pnFlags |= OVERFLOW_MASK;
-    }
+    // Branchless overflow check
+    sz5h3pnFlags |= ((((regA ^ ~oper8) & (regA ^ res)) > 0x7f) * OVERFLOW_MASK);
 
     regA = res;
     flagQ = true;
 }
 
 // Suma con acarreo de 8 bits
-void Z80::adc(uint8_t oper8) {
-    uint16_t res = regA + oper8;
-
-    if (carryFlag) {
-        res++;
-    }
+// Optimized with branchless operations
+template<typename Derived>
+Z80_FORCE_INLINE void Z80<Derived>::adc(uint8_t oper8) {
+    uint16_t res = regA + oper8 + carryFlag;
 
     carryFlag = res > 0xff;
     res &= 0xff;
     sz5h3pnFlags = sz53n_addTable[res];
 
-    if (((regA ^ oper8 ^ res) & 0x10) != 0) {
-        sz5h3pnFlags |= HALFCARRY_MASK;
-    }
+    // Branchless half-carry
+    sz5h3pnFlags |= ((((regA ^ oper8 ^ res) & 0x10) != 0) * HALFCARRY_MASK);
 
-    if (((regA ^ ~oper8) & (regA ^ res)) > 0x7f) {
-        sz5h3pnFlags |= OVERFLOW_MASK;
-    }
+    // Branchless overflow
+    sz5h3pnFlags |= ((((regA ^ ~oper8) & (regA ^ res)) > 0x7f) * OVERFLOW_MASK);
 
     regA = res;
     flagQ = true;
 }
 
 // Suma dos operandos de 16 bits sin carry afectando a los flags
-void Z80::add16(RegisterPair &reg16, uint16_t oper16) {
+template<typename Derived>
+Z80_FORCE_INLINE void Z80<Derived>::add16(RegisterPair &reg16, uint16_t oper16) {
     uint32_t tmp = oper16 + reg16.word;
 
     REG_WZ = reg16.word + 1;
@@ -344,121 +357,105 @@ void Z80::add16(RegisterPair &reg16, uint16_t oper16) {
     reg16.word = tmp;
     sz5h3pnFlags = (sz5h3pnFlags & FLAG_SZP_MASK) | ((reg16.word >> 8) & FLAG_53_MASK);
 
-    if ((reg16.word & 0x0fff) < (oper16 & 0x0fff)) {
-        sz5h3pnFlags |= HALFCARRY_MASK;
-    }
+    // Branchless half-carry
+    sz5h3pnFlags |= (((reg16.word & 0x0fff) < (oper16 & 0x0fff)) * HALFCARRY_MASK);
 
     flagQ = true;
 }
 
 // Suma con acarreo de 16 bits
-void Z80::adc16(uint16_t reg16) {
+template<typename Derived>
+Z80_FORCE_INLINE void Z80<Derived>::adc16(uint16_t reg16) {
     uint16_t tmpHL = REG_HL;
     REG_WZ = REG_HL + 1;
 
-    uint32_t res = REG_HL + reg16;
-    if (carryFlag) {
-        res++;
-    }
+    uint32_t res = REG_HL + reg16 + carryFlag;
 
     carryFlag = res > 0xffff;
     res &= 0xffff;
     REG_HL = static_cast<uint16_t>(res);
 
     sz5h3pnFlags = sz53n_addTable[REG_H];
-    if (res != 0) {
-        sz5h3pnFlags &= ~ZERO_MASK;
-    }
+    // Branchless zero flag clear
+    sz5h3pnFlags &= ~((res != 0) * ZERO_MASK);
 
-    if (((res ^ tmpHL ^ reg16) & 0x1000) != 0) {
-        sz5h3pnFlags |= HALFCARRY_MASK;
-    }
+    // Branchless half-carry
+    sz5h3pnFlags |= ((((res ^ tmpHL ^ reg16) & 0x1000) != 0) * HALFCARRY_MASK);
 
-    if (((tmpHL ^ ~reg16) & (tmpHL ^ res)) > 0x7fff) {
-        sz5h3pnFlags |= OVERFLOW_MASK;
-    }
+    // Branchless overflow
+    sz5h3pnFlags |= ((((tmpHL ^ ~reg16) & (tmpHL ^ res)) > 0x7fff) * OVERFLOW_MASK);
 
     flagQ = true;
 }
 
 // Resta de 8 bits
-void Z80::sub(uint8_t oper8) {
+// Branchless version for better pipeline performance
+template<typename Derived>
+Z80_FORCE_INLINE void Z80<Derived>::sub(uint8_t oper8) {
     auto res = static_cast<int16_t>(regA - oper8);
 
     carryFlag = res < 0;
     res &= 0xff;
     sz5h3pnFlags = sz53n_subTable[res];
 
-    /* El módulo 16 del resultado será mayor que el módulo 16 del registro A
-     * si ha habido HalfCarry. Sucede lo mismo para todos los métodos resta
-     * SIN carry, incluido cp */
-    if ((res & 0x0f) > (regA & 0x0f)) {
-        sz5h3pnFlags |= HALFCARRY_MASK;
-    }
+    // Branchless half-carry
+    sz5h3pnFlags |= (((res & 0x0f) > (regA & 0x0f)) * HALFCARRY_MASK);
 
-    if (((regA ^ oper8) & (regA ^ res)) > 0x7f) {
-        sz5h3pnFlags |= OVERFLOW_MASK;
-    }
+    // Branchless overflow
+    sz5h3pnFlags |= ((((regA ^ oper8) & (regA ^ res)) > 0x7f) * OVERFLOW_MASK);
 
     regA = res;
     flagQ = true;
 }
 
 // Resta con acarreo de 8 bits
-void Z80::sbc(uint8_t oper8) {
-    auto res = static_cast<int16_t>(regA - oper8);
-
-    if (carryFlag) {
-        res--;
-    }
+// Optimized with branchless operations
+template<typename Derived>
+Z80_FORCE_INLINE void Z80<Derived>::sbc(uint8_t oper8) {
+    auto res = static_cast<int16_t>(regA - oper8 - carryFlag);
 
     carryFlag = res < 0;
     res &= 0xff;
     sz5h3pnFlags = sz53n_subTable[res];
 
-    if (((regA ^ oper8 ^ res) & 0x10) != 0) {
-        sz5h3pnFlags |= HALFCARRY_MASK;
-    }
+    // Branchless half-carry
+    sz5h3pnFlags |= ((((regA ^ oper8 ^ res) & 0x10) != 0) * HALFCARRY_MASK);
 
-    if (((regA ^ oper8) & (regA ^ res)) > 0x7f) {
-        sz5h3pnFlags |= OVERFLOW_MASK;
-    }
+    // Branchless overflow
+    sz5h3pnFlags |= ((((regA ^ oper8) & (regA ^ res)) > 0x7f) * OVERFLOW_MASK);
 
     regA = res;
     flagQ = true;
 }
 
 // Resta con acarreo de 16 bits
-void Z80::sbc16(uint16_t reg16) {
+// Optimized with branchless operations
+template<typename Derived>
+Z80_FORCE_INLINE void Z80<Derived>::sbc16(uint16_t reg16) {
     uint16_t tmpHL = REG_HL;
     REG_WZ = REG_HL + 1;
 
-    int32_t res = REG_HL - reg16;
-    if (carryFlag) {
-        res--;
-    }
+    int32_t res = REG_HL - reg16 - carryFlag;
 
     carryFlag = res < 0;
     res &= 0xffff;
     REG_HL = static_cast<uint16_t>(res);
 
     sz5h3pnFlags = sz53n_subTable[REG_H];
-    if (res != 0) {
-        sz5h3pnFlags &= ~ZERO_MASK;
-    }
+    // Branchless zero flag clear
+    sz5h3pnFlags &= ~((res != 0) * ZERO_MASK);
 
-    if (((res ^ tmpHL ^ reg16) & 0x1000) != 0) {
-        sz5h3pnFlags |= HALFCARRY_MASK;
-    }
+    // Branchless half-carry
+    sz5h3pnFlags |= ((((res ^ tmpHL ^ reg16) & 0x1000) != 0) * HALFCARRY_MASK);
 
-    if (((tmpHL ^ reg16) & (tmpHL ^ res)) > 0x7fff) {
-        sz5h3pnFlags |= OVERFLOW_MASK;
-    }
+    // Branchless overflow
+    sz5h3pnFlags |= ((((tmpHL ^ reg16) & (tmpHL ^ res)) > 0x7fff) * OVERFLOW_MASK);
     flagQ = true;
 }
 
 // Operación AND lógica
-void Z80::and_(uint8_t oper8) {
+template<typename Derived>
+Z80_FORCE_INLINE void Z80<Derived>::and_(uint8_t oper8) {
     regA &= oper8;
     carryFlag = false;
     sz5h3pnFlags = sz53pn_addTable[regA] | HALFCARRY_MASK;
@@ -466,7 +463,8 @@ void Z80::and_(uint8_t oper8) {
 }
 
 // Operación XOR lógica
-void Z80::xor_(uint8_t oper8) {
+template<typename Derived>
+Z80_FORCE_INLINE void Z80<Derived>::xor_(uint8_t oper8) {
     regA ^= oper8;
     carryFlag = false;
     sz5h3pnFlags = sz53pn_addTable[regA];
@@ -474,7 +472,8 @@ void Z80::xor_(uint8_t oper8) {
 }
 
 // Operación OR lógica
-void Z80::or_(uint8_t oper8) {
+template<typename Derived>
+Z80_FORCE_INLINE void Z80<Derived>::or_(uint8_t oper8) {
     regA |= oper8;
     carryFlag = false;
     sz5h3pnFlags = sz53pn_addTable[regA];
@@ -485,7 +484,9 @@ void Z80::or_(uint8_t oper8) {
 // es como SUB, pero solo afecta a los flags
 // Los flags SIGN y ZERO se calculan a partir del resultado
 // Los flags 3 y 5 se copian desde el operando (sigh!)
-void Z80::cp(uint8_t oper8) {
+// Branchless version
+template<typename Derived>
+Z80_FORCE_INLINE void Z80<Derived>::cp(uint8_t oper8) {
     auto res = static_cast<int16_t>(regA - oper8);
 
     carryFlag = res < 0;
@@ -495,33 +496,29 @@ void Z80::cp(uint8_t oper8) {
             | // No necesito preservar H, pero está a 0 en la tabla de todas formas
             (sz53n_subTable[res] & FLAG_SZHN_MASK);
 
-    if ((res & 0x0f) > (regA & 0x0f)) {
-        sz5h3pnFlags |= HALFCARRY_MASK;
-    }
+    // Branchless half-carry
+    sz5h3pnFlags |= (((res & 0x0f) > (regA & 0x0f)) * HALFCARRY_MASK);
 
-    if (((regA ^ oper8) & (regA ^ res)) > 0x7f) {
-        sz5h3pnFlags |= OVERFLOW_MASK;
-    }
+    // Branchless overflow
+    sz5h3pnFlags |= ((((regA ^ oper8) & (regA ^ res)) > 0x7f) * OVERFLOW_MASK);
 
     flagQ = true;
 }
 
 // DAA
-void Z80::daa() {
+template<typename Derived>
+Z80_FORCE_INLINE void Z80<Derived>::daa() {
     uint8_t suma = 0;
     bool carry = carryFlag;
 
-    if ((sz5h3pnFlags & HALFCARRY_MASK) != 0 || (regA & 0x0f) > 0x09) {
-        suma = 6;
-    }
+    // Branchless low nibble adjustment
+    suma = (((sz5h3pnFlags & HALFCARRY_MASK) != 0) | ((regA & 0x0f) > 0x09)) * 6;
 
-    if (carry || (regA > 0x99)) {
-        suma |= 0x60;
-    }
+    // Branchless high nibble adjustment
+    suma |= ((carry | (regA > 0x99)) * 0x60);
 
-    if (regA > 0x99) {
-        carry = true;
-    }
+    // Branchless carry determination
+    carry |= (regA > 0x99);
 
     if ((sz5h3pnFlags & ADDSUB_MASK) != 0) {
         sub(suma);
@@ -532,25 +529,27 @@ void Z80::daa() {
     }
 
     carryFlag = carry;
-    // Los add/sub ya ponen el resto de los flags
     flagQ = true;
 }
 
 // POP
-uint16_t Z80::pop() {
+template<typename Derived>
+Z80_FORCE_INLINE uint16_t Z80<Derived>::pop() {
     uint16_t word = Z80opsImpl->peek16(REG_SP);
     REG_SP = REG_SP + 2;
     return word;
 }
 
 // PUSH
-void Z80::push(uint16_t word) {
+template<typename Derived>
+Z80_FORCE_INLINE void Z80<Derived>::push(uint16_t word) {
     Z80opsImpl->poke8(--REG_SP, word >> 8);
     Z80opsImpl->poke8(--REG_SP, word);
 }
 
 // LDI
-void Z80::ldi() {
+template<typename Derived>
+void Z80<Derived>::ldi() {
     uint8_t work8 = Z80opsImpl->peek8(REG_HL);
     Z80opsImpl->poke8(REG_DE, work8);
     Z80opsImpl->addressOnBus(REG_DE, 2);
@@ -572,7 +571,8 @@ void Z80::ldi() {
 }
 
 // LDD
-void Z80::ldd() {
+template<typename Derived>
+void Z80<Derived>::ldd() {
     uint8_t work8 = Z80opsImpl->peek8(REG_HL);
     Z80opsImpl->poke8(REG_DE, work8);
     Z80opsImpl->addressOnBus(REG_DE, 2);
@@ -594,7 +594,8 @@ void Z80::ldd() {
 }
 
 // CPI
-void Z80::cpi() {
+template<typename Derived>
+void Z80<Derived>::cpi() {
     uint8_t memHL = Z80opsImpl->peek8(REG_HL);
     bool carry = carryFlag; // lo guardo porque cp lo toca
     cp(memHL);
@@ -618,7 +619,8 @@ void Z80::cpi() {
 }
 
 // CPD
-void Z80::cpd() {
+template<typename Derived>
+void Z80<Derived>::cpd() {
     uint8_t memHL = Z80opsImpl->peek8(REG_HL);
     bool carry = carryFlag; // lo guardo porque cp lo toca
     cp(memHL);
@@ -642,7 +644,8 @@ void Z80::cpd() {
 }
 
 // INI
-void Z80::ini() {
+template<typename Derived>
+void Z80<Derived>::ini() {
     REG_WZ = REG_BC;
     Z80opsImpl->addressOnBus(getPairIR().word, 1);
     uint8_t work8 = Z80opsImpl->inPort(REG_WZ++);
@@ -673,7 +676,8 @@ void Z80::ini() {
 }
 
 // IND
-void Z80::ind() {
+template<typename Derived>
+void Z80<Derived>::ind() {
     REG_WZ = REG_BC;
     Z80opsImpl->addressOnBus(getPairIR().word, 1);
     uint8_t work8 = Z80opsImpl->inPort(REG_WZ--);
@@ -704,7 +708,8 @@ void Z80::ind() {
 }
 
 // OUTI
-void Z80::outi() {
+template<typename Derived>
+void Z80<Derived>::outi() {
 
     Z80opsImpl->addressOnBus(getPairIR().word, 1);
 
@@ -736,7 +741,8 @@ void Z80::outi() {
 }
 
 // OUTD
-void Z80::outd() {
+template<typename Derived>
+void Z80<Derived>::outd() {
 
     Z80opsImpl->addressOnBus(getPairIR().word, 1);
 
@@ -779,18 +785,17 @@ void Z80::outd() {
  * 04/12/08 Confirmado el comentario anterior:
  *          http://scratchpad.wikia.com/wiki/Z80
  */
-void Z80::bitTest(uint8_t mask, uint8_t reg) {
+template<typename Derived>
+Z80_FORCE_INLINE void Z80<Derived>::bitTest(uint8_t mask, uint8_t reg) {
     bool zeroFlag = (mask & reg) == 0;
 
     sz5h3pnFlags = (sz53n_addTable[reg] & ~FLAG_SZP_MASK) | HALFCARRY_MASK;
 
-    if (zeroFlag) {
-        sz5h3pnFlags |= (PARITY_MASK | ZERO_MASK);
-    }
+    // Branchless: set parity and zero if bit is zero
+    sz5h3pnFlags |= (zeroFlag * (PARITY_MASK | ZERO_MASK));
 
-    if (mask == SIGN_MASK && !zeroFlag) {
-        sz5h3pnFlags |= SIGN_MASK;
-    }
+    // Branchless: set sign flag if testing bit 7 and it's set
+    sz5h3pnFlags |= (((mask == SIGN_MASK) & !zeroFlag) * SIGN_MASK);
     flagQ = true;
 }
 
@@ -811,7 +816,8 @@ void Z80::bitTest(uint8_t mask, uint8_t reg) {
  *      M4: 3 T-Estados -> leer byte bajo del vector de INT
  *      M5: 3 T-Estados -> leer byte alto y saltar a la rutina de INT
  */
-void Z80::interrupt() {
+template<typename Derived>
+void Z80<Derived>::interrupt() {
     // Si estaba en un HALT esperando una INT, lo saca de la espera
     halted = false;
 
@@ -834,7 +840,8 @@ void Z80::interrupt() {
  * M2: 3 T-Estados -> escribe byte alto de PC y decSP
  * M3: 3 T-Estados -> escrib e byte bajo de PC y PC=0x0066
  */
-void Z80::nmi() {
+template<typename Derived>
+void Z80<Derived>::nmi() {
     halted = false;
     // Esta lectura consigue dos cosas:
     //      1.- La lectura del opcode del M1 que se descarta
@@ -847,7 +854,8 @@ void Z80::nmi() {
     REG_PC = REG_WZ = 0x0066;
 }
 
-void Z80::execute() {
+template<typename Derived>
+void Z80<Derived>::execute() {
 
     m_opCode = Z80opsImpl->fetchOpcode(REG_PC);
     regR++;
@@ -988,7 +996,8 @@ void Z80::execute() {
     #define CASE_OPCODE(hex, desc) case hex /* desc */
 #endif
 
-void Z80::decodeOpcode(uint8_t opCode) {
+template<typename Derived>
+void Z80<Derived>::decodeOpcode(uint8_t opCode) {
 
 #if defined(__GNUC__) || defined(__clang__)
     // Using computed goto dispatch table for optimal performance
@@ -2625,7 +2634,8 @@ void Z80::decodeOpcode(uint8_t opCode) {
 
 //Subconjunto de instrucciones 0xCB
 
-void Z80::decodeCB(uint8_t opCode) {
+template<typename Derived>
+void Z80<Derived>::decodeCB(uint8_t opCode) {
     switch (opCode) {
         case 0x00:
         { /* RLC B */
@@ -4000,7 +4010,8 @@ void Z80::decodeCB(uint8_t opCode) {
  * Naturalmente, en una serie repetida de DDFD no hay que comprobar las
  * interrupciones entre cada prefijo.
  */
-void Z80::decodeDDFD(uint8_t opCode, RegisterPair& regIXY) {
+template<typename Derived>
+void Z80<Derived>::decodeDDFD(uint8_t opCode, RegisterPair& regIXY) {
     switch (opCode) {
         case 0x09:
         { /* ADD IX,BC */
@@ -4575,7 +4586,8 @@ void Z80::decodeDDFD(uint8_t opCode, RegisterPair& regIXY) {
 }
 
 // Subconjunto de instrucciones 0xDDCB
-void Z80::decodeDDFDCB(uint8_t opCode, uint16_t address) {
+template<typename Derived>
+void Z80<Derived>::decodeDDFDCB(uint8_t opCode, uint16_t address) {
 
     switch (opCode) {
         case 0x00: /* RLC (IX+d),B */
@@ -5071,7 +5083,8 @@ void Z80::decodeDDFDCB(uint8_t opCode, uint16_t address) {
 
 //Subconjunto de instrucciones 0xED
 
-void Z80::decodeED(uint8_t opCode) {
+template<typename Derived>
+void Z80<Derived>::decodeED(uint8_t opCode) {
     switch (opCode) {
         case 0x40:
         { /* IN B,(C) */
@@ -5588,7 +5601,8 @@ void Z80::decodeED(uint8_t opCode) {
     }
 }
 
-void Z80::copyToRegister(uint8_t opCode, uint8_t value)
+template<typename Derived>
+void Z80<Derived>::copyToRegister(uint8_t opCode, uint8_t value)
 {
     switch (opCode & 0x07)
     {
@@ -5617,7 +5631,8 @@ void Z80::copyToRegister(uint8_t opCode, uint8_t value)
     }
 }
 
-void Z80::adjustINxROUTxRFlags()
+template<typename Derived>
+void Z80<Derived>::adjustINxROUTxRFlags()
 {
     sz5h3pnFlags &= ~FLAG_53_MASK;
     sz5h3pnFlags |= (REG_PCh & FLAG_53_MASK);
@@ -5641,3 +5656,4 @@ void Z80::adjustINxROUTxRFlags()
     else
         sz5h3pnFlags &= ~PARITY_MASK;
 }
+#endif // Z80_IMPL_H

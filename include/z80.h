@@ -12,6 +12,31 @@
 
 #include <cstdint>
 
+// ============================================================================
+// Performance Optimization Macros
+// ============================================================================
+
+// Force inline for hot paths - critical for ALU functions
+#if defined(__GNUC__) || defined(__clang__)
+    #define Z80_FORCE_INLINE __attribute__((always_inline)) inline
+    #define Z80_HOT __attribute__((hot))
+    #define Z80_COLD __attribute__((cold))
+    #define Z80_LIKELY(x) __builtin_expect(!!(x), 1)
+    #define Z80_UNLIKELY(x) __builtin_expect(!!(x), 0)
+#elif defined(_MSC_VER)
+    #define Z80_FORCE_INLINE __forceinline
+    #define Z80_HOT
+    #define Z80_COLD
+    #define Z80_LIKELY(x) (x)
+    #define Z80_UNLIKELY(x) (x)
+#else
+    #define Z80_FORCE_INLINE inline
+    #define Z80_HOT
+    #define Z80_COLD
+    #define Z80_LIKELY(x) (x)
+    #define Z80_UNLIKELY(x) (x)
+#endif
+
 /* Union allowing a register pair to be accessed as bytes or as a word */
 typedef union {
 #if __BYTE_ORDER__ == __ORDER_BIG_ENDIAN__
@@ -73,6 +98,21 @@ typedef union {
 #define REG_Z   memptr.byte8.lo
 #define REG_WZ  memptr.word
 
+/**
+ * Z80 CPU Core - CRTP Template Version
+ *
+ * Template parameter Derived is the operations implementation class
+ * that inherits from Z80operations<Derived> and provides memory/IO hooks.
+ *
+ * Usage:
+ *   class MySystem : public Z80operations<MySystem> {
+ *       Z80<MySystem> cpu;
+ *   public:
+ *       MySystem() : cpu(this) {}
+ *       // Implement required methods...
+ *   };
+ */
+template<typename Derived>
 class Z80 {
 public:
     // Modos de interrupción
@@ -80,139 +120,114 @@ public:
         IM0, IM1, IM2
     };
 private:
-    Z80operations *Z80opsImpl;
+    // ========================================================================
+    // HOT DATA - Frequently accessed members grouped for cache locality
+    // ========================================================================
+
+    // Acumulador y flags - accessed in almost every ALU operation
+    uint8_t regA;
+    uint8_t sz5h3pnFlags;  // Flags sIGN, zERO, 5, hALFCARRY, 3, pARITY y ADDSUB
+    bool carryFlag;        // Carry is special-cased for performance
+
+    // Registros principales - very frequently used
+    RegisterPair regBC, regDE, regHL;
+
+    // Program counter and stack pointer - accessed every instruction
+    RegisterPair regPC;
+    RegisterPair regSP;
+
     // Código de instrucción a ejecutar
     // Poner esta variable como local produce peor rendimiento
-    // ZEXALL test: (local) 1:54 vs 1:47 (visitante)
     uint8_t m_opCode;
-    // Se está ejecutando una instrucción prefijada con DD, ED o FD
-    // Los valores permitidos son [0x00, 0xDD, 0xED, 0xFD]
-    // El prefijo 0xCB queda al margen porque, detrás de 0xCB, siempre
-    // viene un código de instrucción válido, tanto si delante va un
-    // 0xDD o 0xFD como si no.
     uint8_t prefixOpcode = { 0x00 };
-    // Subsistema de notificaciones
-    bool execDone;
-    // Posiciones de los flags
-    const static uint8_t CARRY_MASK = 0x01;
-    const static uint8_t ADDSUB_MASK = 0x02;
-    const static uint8_t PARITY_MASK = 0x04;
-    const static uint8_t OVERFLOW_MASK = 0x04; // alias de PARITY_MASK
-    const static uint8_t BIT3_MASK = 0x08;
-    const static uint8_t HALFCARRY_MASK = 0x10;
-    const static uint8_t BIT5_MASK = 0x20;
-    const static uint8_t ZERO_MASK = 0x40;
-    const static uint8_t SIGN_MASK = 0x80;
-    // Máscaras de conveniencia
-    const static uint8_t FLAG_53_MASK = BIT5_MASK | BIT3_MASK;
-    const static uint8_t FLAG_SZ_MASK = SIGN_MASK | ZERO_MASK;
-    const static uint8_t FLAG_SZHN_MASK = FLAG_SZ_MASK | HALFCARRY_MASK | ADDSUB_MASK;
-    const static uint8_t FLAG_SZP_MASK = FLAG_SZ_MASK | PARITY_MASK;
-    const static uint8_t FLAG_SZHP_MASK = FLAG_SZP_MASK | HALFCARRY_MASK;
-    // Acumulador y resto de registros de 8 bits
-    uint8_t regA;
-    // Flags sIGN, zERO, 5, hALFCARRY, 3, pARITY y ADDSUB (n)
-    uint8_t sz5h3pnFlags;
-    // El flag Carry es el único que se trata aparte
-    bool carryFlag;
-    // Registros principales y alternativos
-    RegisterPair regBC, regBCx, regDE, regDEx, regHL, regHLx;
-    /* Flags para indicar la modificación del registro F en la instrucción actual
-     * y en la anterior.
-     * Son necesarios para emular el comportamiento de los bits 3 y 5 del
-     * registro F con las instrucciones CCF/SCF.
-     *
-     * http://www.worldofspectrum.org/forums/showthread.php?t=41834
-     * http://www.worldofspectrum.org/forums/showthread.php?t=41704
-     *
-     * Thanks to Patrik Rak for his tests and investigations.
-     */
+
+    // Internal hidden register used by many instructions
+    RegisterPair memptr;
+
+    // I and R registers - accessed for refresh cycles
+    uint8_t regI;
+    uint8_t regR;
+    bool regRbit7;
+
+    // Flag Q tracking
     bool flagQ, lastFlagQ;
 
-    // Acumulador alternativo y flags -- 8 bits
+    // Index registers - used with DD/FD prefixed instructions
+    RegisterPair regIX;
+    RegisterPair regIY;
+
+    // Operations implementation pointer
+    Derived *Z80opsImpl;
+
+    // ========================================================================
+    // COLD DATA - Less frequently accessed members
+    // ========================================================================
+
+    // Registros alternativos - only used with EX/EXX
+    RegisterPair regBCx, regDEx, regHLx;
     RegisterPair regAFx;
 
-    // Registros de propósito específico
-    // *PC -- Program Counter -- 16 bits*
-    RegisterPair regPC;
-    // *IX -- Registro de índice -- 16 bits*
-    RegisterPair regIX;
-    // *IY -- Registro de índice -- 16 bits*
-    RegisterPair regIY;
-    // *SP -- Stack Pointer -- 16 bits*
-    RegisterPair regSP;
-    // *I -- Vector de interrupción -- 8 bits*
-    uint8_t regI;
-    // *R -- Refresco de memoria -- 7 bits*
-    uint8_t regR;
-    // *R7 -- Refresco de memoria -- 1 bit* (bit superior de R)
-    bool regRbit7;
-    //Flip-flops de interrupción
+    // Interrupt state
     bool ffIFF1 = false;
     bool ffIFF2 = false;
-    // EI solo habilita las interrupciones DESPUES de ejecutar la
-    // siguiente instrucción (excepto si la siguiente instrucción es un EI...)
     bool pendingEI = false;
-    // Estado de la línea NMI
     bool activeNMI = false;
-    // Modo de interrupción
     IntMode modeINT = IntMode::IM0;
-    // halted == true cuando la CPU está ejecutando un HALT (28/03/2010)
     bool halted = false;
-    // pinReset == true, se ha producido un reset a través de la patilla
     bool pinReset = false;
-    /*
-     * Registro interno que usa la CPU de la siguiente forma
-     *
-     * ADD HL,xx      = Valor del registro H antes de la suma
-     * LD r,(IX/IY+d) = Byte superior de la suma de IX/IY+d
-     * JR d           = Byte superior de la dirección de destino del salto
-     *
-     * 04/12/2008     No se vayan todavía, aún hay más. Con lo que se ha
-     *                implementado hasta ahora parece que funciona. El resto de
-     *                la historia está contada en:
-     *                http://zx.pk.ru/attachment.php?attachmentid=2989
-     *
-     * 25/09/2009     Se ha completado la emulación de MEMPTR. A señalar que
-     *                no se puede comprobar si MEMPTR se ha emulado bien hasta
-     *                que no se emula el comportamiento del registro en las
-     *                instrucciones CPI y CPD. Sin ello, todos los tests de
-     *                z80tests.tap fallarán aunque se haya emulado bien al
-     *                registro en TODAS las otras instrucciones.
-     *                Shit yourself, little parrot.
-     */
+    bool execDone;
 
-    RegisterPair memptr;
-    // I and R registers
-    inline RegisterPair getPairIR() const;
+    // ========================================================================
+    // LOOKUP TABLES - Used for fast flag calculation
+    // ========================================================================
 
-    /* Algunos flags se precalculan para un tratamiento más rápido
-     * Concretamente, SIGN, ZERO, los bits 3, 5, PARITY y ADDSUB:
-     * sz53n_addTable tiene el ADDSUB flag a 0 y paridad sin calcular
-     * sz53pn_addTable tiene el ADDSUB flag a 0 y paridad calculada
-     * sz53n_subTable tiene el ADDSUB flag a 1 y paridad sin calcular
-     * sz53pn_subTable tiene el ADDSUB flag a 1 y paridad calculada
-     * El resto de bits están a 0 en las cuatro tablas lo que es
-     * importante para muchas operaciones que ponen ciertos flags a 0 por real
-     * decreto. Si lo ponen a 1 por el mismo método basta con hacer un OR con
-     * la máscara correspondiente.
-     */
+    /* Algunos flags se precalculan para un tratamiento más rápido */
     uint8_t sz53n_addTable[256] = {};
     uint8_t sz53pn_addTable[256] = {};
     uint8_t sz53n_subTable[256] = {};
     uint8_t sz53pn_subTable[256] = {};
 
-    // Un true en una dirección indica que se debe notificar que se va a
-    // ejecutar la instrucción que está en esa direción.
+    // ========================================================================
+    // CONSTANTS
+    // ========================================================================
+
+    // Posiciones de los flags
+    static constexpr uint8_t CARRY_MASK = 0x01;
+    static constexpr uint8_t ADDSUB_MASK = 0x02;
+    static constexpr uint8_t PARITY_MASK = 0x04;
+    static constexpr uint8_t OVERFLOW_MASK = 0x04; // alias de PARITY_MASK
+    static constexpr uint8_t BIT3_MASK = 0x08;
+    static constexpr uint8_t HALFCARRY_MASK = 0x10;
+    static constexpr uint8_t BIT5_MASK = 0x20;
+    static constexpr uint8_t ZERO_MASK = 0x40;
+    static constexpr uint8_t SIGN_MASK = 0x80;
+    // Máscaras de conveniencia
+    static constexpr uint8_t FLAG_53_MASK = BIT5_MASK | BIT3_MASK;
+    static constexpr uint8_t FLAG_SZ_MASK = SIGN_MASK | ZERO_MASK;
+    static constexpr uint8_t FLAG_SZHN_MASK = FLAG_SZ_MASK | HALFCARRY_MASK | ADDSUB_MASK;
+    static constexpr uint8_t FLAG_SZP_MASK = FLAG_SZ_MASK | PARITY_MASK;
+    static constexpr uint8_t FLAG_SZHP_MASK = FLAG_SZP_MASK | HALFCARRY_MASK;
+
 #ifdef WITH_BREAKPOINT_SUPPORT
     bool breakpointEnabled {false};
 #endif
-    void copyToRegister(uint8_t opCode, uint8_t value);
-    void adjustINxROUTxRFlags();
+
+    // ========================================================================
+    // PRIVATE HELPER FUNCTIONS
+    // ========================================================================
+
+    // Optimized IR register access - returns uint16_t directly
+    Z80_FORCE_INLINE uint16_t getIRWord() const {
+        return (static_cast<uint16_t>(regI) << 8) |
+               ((regRbit7 ? (regR | SIGN_MASK) : regR) & 0x7f);
+    }
+
+    // Legacy interface - wrapper for compatibility
+    inline RegisterPair getPairIR() const;
 
 public:
     // Constructor de la clase
-    explicit Z80(Z80operations *ops);
+    explicit Z80(Derived *ops);
     ~Z80();
 
     // Acceso a registros de 8 bits
@@ -393,82 +408,82 @@ public:
 
 private:
     // Rota a la izquierda el valor del argumento
-    inline void rlc(uint8_t &oper8);
+    Z80_FORCE_INLINE void rlc(uint8_t &oper8);
 
     // Rota a la izquierda el valor del argumento
-    inline void rl(uint8_t &oper8);
+    Z80_FORCE_INLINE void rl(uint8_t &oper8);
 
     // Rota a la izquierda el valor del argumento
-    inline void sla(uint8_t &oper8);
+    Z80_FORCE_INLINE void sla(uint8_t &oper8);
 
     // Rota a la izquierda el valor del argumento (como sla salvo por el bit 0)
-    inline void sll(uint8_t &oper8);
+    Z80_FORCE_INLINE void sll(uint8_t &oper8);
 
     // Rota a la derecha el valor del argumento
-    inline void rrc(uint8_t &oper8);
+    Z80_FORCE_INLINE void rrc(uint8_t &oper8);
 
     // Rota a la derecha el valor del argumento
-    inline void rr(uint8_t &oper8);
+    Z80_FORCE_INLINE void rr(uint8_t &oper8);
 
     // Rota a la derecha 1 bit el valor del argumento
-    inline void sra(uint8_t &oper8);
+    Z80_FORCE_INLINE void sra(uint8_t &oper8);
 
     // Rota a la derecha 1 bit el valor del argumento
-    inline void srl(uint8_t &oper8);
+    Z80_FORCE_INLINE void srl(uint8_t &oper8);
 
     // Incrementa un valor de 8 bits modificando los flags oportunos
-    inline void inc8(uint8_t &oper8);
+    Z80_FORCE_INLINE void inc8(uint8_t &oper8);
 
     // Decrementa un valor de 8 bits modificando los flags oportunos
-    inline void dec8(uint8_t &oper8);
+    Z80_FORCE_INLINE void dec8(uint8_t &oper8);
 
     // Suma de 8 bits afectando a los flags
-    inline void add(uint8_t oper8);
+    Z80_FORCE_INLINE void add(uint8_t oper8);
 
     // Suma con acarreo de 8 bits
-    inline void adc(uint8_t oper8);
+    Z80_FORCE_INLINE void adc(uint8_t oper8);
 
     // Suma dos operandos de 16 bits sin carry afectando a los flags
-    inline void add16(RegisterPair &reg16, uint16_t oper16);
+    Z80_FORCE_INLINE void add16(RegisterPair &reg16, uint16_t oper16);
 
     // Suma con acarreo de 16 bits
-    inline void adc16(uint16_t reg16);
+    Z80_FORCE_INLINE void adc16(uint16_t reg16);
 
     // Resta de 8 bits
-    inline void sub(uint8_t oper8);
+    Z80_FORCE_INLINE void sub(uint8_t oper8);
 
     // Resta con acarreo de 8 bits
-    inline void sbc(uint8_t oper8);
+    Z80_FORCE_INLINE void sbc(uint8_t oper8);
 
     // Resta con acarreo de 16 bits
-    inline void sbc16(uint16_t reg16);
+    Z80_FORCE_INLINE void sbc16(uint16_t reg16);
 
     // Operación AND lógica
     // Simple 'and' is C++ reserved keyword
-    inline void and_(uint8_t oper8);
+    Z80_FORCE_INLINE void and_(uint8_t oper8);
 
     // Operación XOR lógica
     // Simple 'xor' is C++ reserved keyword
-    inline void xor_(uint8_t oper8);
+    Z80_FORCE_INLINE void xor_(uint8_t oper8);
 
     // Operación OR lógica
     // Simple 'or' is C++ reserved keyword
-    inline void or_(uint8_t oper8);
+    Z80_FORCE_INLINE void or_(uint8_t oper8);
 
     // Operación de comparación con el registro A
     // es como SUB, pero solo afecta a los flags
     // Los flags SIGN y ZERO se calculan a partir del resultado
     // Los flags 3 y 5 se copian desde el operando (sigh!)
-    inline void cp(uint8_t oper8);
+    Z80_FORCE_INLINE void cp(uint8_t oper8);
 
     // DAA
-    inline void daa();
+    Z80_FORCE_INLINE void daa();
 
     // POP
-    inline uint16_t pop();
+    Z80_FORCE_INLINE uint16_t pop();
 
     // PUSH
-    inline void push(uint16_t word);
+    Z80_FORCE_INLINE void push(uint16_t word);
 
     // LDI
     void ldi();
@@ -495,31 +510,40 @@ private:
     void outd();
 
     // BIT n,r
-    inline void bitTest(uint8_t mask, uint8_t reg);
+    Z80_FORCE_INLINE void bitTest(uint8_t mask, uint8_t reg);
 
     //Interrupción
-    void interrupt();
+    Z80_COLD void interrupt();
 
     //Interrupción NMI
-    void nmi();
+    Z80_COLD void nmi();
 
     // Decode main opcodes
-    void decodeOpcode(uint8_t opCode);
+    Z80_HOT void decodeOpcode(uint8_t opCode);
 
     // Subconjunto de instrucciones 0xCB
     // decode CBXX opcodes
-    void decodeCB();
+    Z80_HOT void decodeCB(uint8_t opCode);
 
     //Subconjunto de instrucciones 0xDD / 0xFD
     // Decode DD/FD opcodes
-    void decodeDDFD(uint8_t opCode, RegisterPair& regIXY);
+    Z80_HOT void decodeDDFD(uint8_t opCode, RegisterPair& regIXY);
 
     // Subconjunto de instrucciones 0xDD / 0xFD 0xCB
     // Decode DD / FD CB opcodes
-    void decodeDDFDCB(uint8_t opCode, uint16_t address);
+    Z80_HOT void decodeDDFDCB(uint8_t opCode, uint16_t address);
 
     //Subconjunto de instrucciones 0xED
     // Decode EDXX opcodes
-    void decodeED(uint8_t opCode);
+    Z80_HOT void decodeED(uint8_t opCode);
+
+    // Helper functions
+    void copyToRegister(uint8_t opCode, uint8_t value);
+    void adjustINxROUTxRFlags();
 };
+
+// Include template implementation
+// For template classes, the implementation must be available at compile time
+#include "z80_impl.h"
+
 #endif // Z80CPP_H

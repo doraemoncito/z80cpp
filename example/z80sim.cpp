@@ -2,7 +2,7 @@
 
 using namespace std;
 
-Z80sim::Z80sim() : cpu(this)
+Z80sim::Z80sim() : tstates(0), cpu(this), finish(false), instructionCount(0), cpmMode(true)
 {
 
 }
@@ -17,7 +17,11 @@ uint8_t Z80sim::fetchOpcode(uint16_t address) {
     return z80Ram[address];
 #else
     uint8_t opcode = z80Ram[address];
-    return (address != 0x0005 ? opcode : breakpoint(address, opcode));
+    // Only trigger breakpoint for CP/M programs
+    if (cpmMode && address == 0x0005) {
+        return breakpoint(address, opcode);
+    }
+    return opcode;
 #endif
 
 }
@@ -78,6 +82,11 @@ void Z80sim::execDone(void) {}
 #endif
 
 uint8_t Z80sim::breakpoint(uint16_t address, uint8_t opcode) {
+    // Only handle CP/M BDOS calls if in CP/M mode
+    if (!cpmMode) {
+        return opcode;  // No breakpoint handling for raw Z80 programs
+    }
+
     // Emulate CP/M Syscall at address 5
 
 #ifdef WITH_BREAKPOINT_SUPPORT
@@ -147,12 +156,14 @@ void Z80sim::runTest(std::ifstream* f) {
     }
 }
 
+#ifndef Z80SIM_NO_MAIN
 int main() {
 
-    Z80sim sim = Z80sim();
+    Z80sim sim;
 
     ifstream f1("zexall.bin", ios::in | ios::binary | ios::ate);
     sim.runTest(&f1);
     f1.close();
 
 }
+#endif // Z80SIM_NO_MAIN
