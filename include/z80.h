@@ -540,10 +540,55 @@ private:
     // Helper functions
     void copyToRegister(uint8_t opCode, uint8_t value);
     void adjustINxROUTxRFlags();
+
+#if Z80_ENABLE_SUPERINSTRUCTIONS
+    // ========================================================================
+    // SUPERINSTRUCTIONS - Fused instruction pairs for performance
+    // ========================================================================
+
+    // Detection and dispatch
+    Z80_FORCE_INLINE bool detectSuperinstruction(uint8_t opcode, uint8_t& nextOpcode);
+    Z80_HOT void executeSuperinstruction(uint8_t opcode, uint8_t nextOpcode);
+
+    // Individual superinstruction handlers
+    Z80_FORCE_INLINE void super_INC_HL_LD_A_HL();
+    Z80_FORCE_INLINE void super_LD_A_HL_INC_HL();
+    Z80_FORCE_INLINE void super_LD_HL_nn_LD_HL_n();
+    Z80_FORCE_INLINE void super_LD_A_n_CP_n();
+    Z80_FORCE_INLINE void super_LD_B_n_LD_C_n();
+    Z80_FORCE_INLINE void super_LD_HL_A_INC_HL();
+    Z80_FORCE_INLINE void super_OR_A_JR_Z();
+    Z80_FORCE_INLINE void super_LD_HL_nn_LD_A_HL();
+    Z80_FORCE_INLINE void super_DEC_B_JR_NZ();
+    Z80_FORCE_INLINE void super_PUSH_BC_PUSH_DE();
+    Z80_FORCE_INLINE void super_POP_DE_POP_BC();
+    Z80_FORCE_INLINE void super_LD_DE_nn_LD_HL_nn();
+    Z80_FORCE_INLINE void super_CP_n_RET_Z();
+    Z80_FORCE_INLINE void super_CP_n_RET_NZ();
+    Z80_FORCE_INLINE void super_INC_A_CP_n();
+    Z80_FORCE_INLINE void super_DEC_HL_LD_A_HL();
+    Z80_FORCE_INLINE void super_INC_HL_INC_HL();
+    Z80_FORCE_INLINE void super_DEC_HL_DEC_HL();
+    Z80_FORCE_INLINE void super_ADD_A_n_CP_n();
+    Z80_FORCE_INLINE void super_SUB_n_JR_Z();
+    Z80_FORCE_INLINE void super_AND_n_JR_Z();
+    Z80_FORCE_INLINE void super_INC_HL_DJNZ();
+    Z80_FORCE_INLINE void super_LD_A_HL_CP_n();
+    Z80_FORCE_INLINE void super_LD_HL_A_DEC_HL();
+    Z80_FORCE_INLINE void super_OR_A_JR_NZ();
+    Z80_FORCE_INLINE void super_AND_A_JR_Z();
+    Z80_FORCE_INLINE void super_CP_n_JR_NZ();
+    Z80_FORCE_INLINE void super_CP_n_JR_Z();
+    Z80_FORCE_INLINE void super_PUSH_BC_CALL();
+#endif
 };
 
 // Include template implementation
 // For template classes, the implementation must be available at compile time
 #include "z80_impl.h"
+
+#if Z80_ENABLE_SUPERINSTRUCTIONS
+#include "z80_superinstructions_impl.h"
+#endif
 
 #endif // Z80CPP_H
