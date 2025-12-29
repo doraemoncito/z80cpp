@@ -1,6 +1,6 @@
 .cache/
 .idea/
 .vscode/
+.DS_Store
 build*/
-cmake-build*/
-example/z80sim
+tests/roms/*
