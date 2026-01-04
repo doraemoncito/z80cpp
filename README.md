@@ -79,7 +79,7 @@ ctest -V
     > **Performance metrics:**
     > the performance value (~0.4-0.9 MIPS) represents the measured instruction throughput of the Z80 CPU emulator in a debug build configuration.
     >
-    > **Calculation method:** the MIPS (Million Instructions Per Second) value was determined by executing a set of Z80 CPU instructions and measuring the elapsed time, then  calculating the ratio of total instructions executed to the time taken, expressed in  millions of instructions per second.
+    > **Calculation method:** the MIPS (Million Instructions Per Second) value was determined by executing a set of Z80 CPU instructions and measuring the elapsed time, then dividing the total number of instructions executed by the elapsed time and scaling the result to millions of instructions per second.
     >
     > **Build type:** debug build performance is typically significantly lower than release/optimized builds due to disabled compiler optimizations and additional debugging information. For production use cases, refer to release build performance benchmarks.
 
