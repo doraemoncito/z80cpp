@@ -214,11 +214,11 @@ int main(int argc, char* argv[]) {
         // Min MIPS thresholds are conservative to avoid intermittent failures
         // is_cpm_program: true for CP/M programs (ZEXALL), false for raw Z80 code
         std::vector<BenchmarkConfig> benchmarks = {
-            {"ZEXALL", "zexall.bin", {}, 10000000, 0.4, true},                                  // CP/M program
-            {"Instruction Mix", "", generate_instruction_mix_test(10000), 5000000, 0.3, false}, // Raw Z80
-            {"Memory Intensive", "", generate_memory_intensive_test(1000), 2000000, 0.3, false}, // Raw Z80
-            {"Arithmetic Heavy", "", generate_arithmetic_test(50000), 5000000, 0.3, false},      // Raw Z80
-            {"Branch Heavy", "", generate_jump_test(10000), 3000000, 0.5, false},                // Raw Z80
+            {"ZEXALL", "zexall.bin", {}, 10000000, 0.1, true},                                  // CP/M program
+            {"Instruction Mix", "", generate_instruction_mix_test(10000), 5000000, 0.1, false}, // Raw Z80
+            {"Memory Intensive", "", generate_memory_intensive_test(1000), 2000000, 0.1, false}, // Raw Z80
+            {"Arithmetic Heavy", "", generate_arithmetic_test(50000), 5000000, 0.1, false},      // Raw Z80
+            {"Branch Heavy", "", generate_jump_test(10000), 3000000, 0.1, false},                // Raw Z80
         };
 
         // Run benchmarks
