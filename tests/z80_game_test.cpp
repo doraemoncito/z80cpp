@@ -57,7 +57,6 @@ bool load_game_from_tap(const std::string& tap_path, BenchmarkConfig& config) {
         // Header block
         if (flag == 0x00 && block.size() >= 19) {
             uint8_t block_type = block[1];
-            // uint16_t data_length = *reinterpret_cast<uint16_t*>(&block[12]);
             uint16_t param1 = *reinterpret_cast<uint16_t*>(&block[14]); // Load address for code
 
             if (block_type == 0x03) { // Code
