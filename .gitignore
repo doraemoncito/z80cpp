@@ -2,5 +2,4 @@
 .idea/
 .vscode/
 build*/
-cmake-build*/
-example/z80sim
+tests/roms/*.tap
