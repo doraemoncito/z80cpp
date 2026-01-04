@@ -50,7 +50,7 @@ std::vector<uint8_t> read_tap_block(std::ifstream& tap_file) {
 bool load_game_from_tap(const std::string& tap_path, BenchmarkConfig& config) {
     std::ifstream tap_file(tap_path, std::ios::binary);
     if (!tap_file.is_open()) {
-        std::cerr << "Error: File not found: " << tap_path << '\n';
+        std::cerr << "Skipping " << tap_path << " (file not found)\n";
         return false;
     }
 
