@@ -244,8 +244,8 @@ int main(int argc, char* argv[]) {
         std::cout << "Summary" << '\n';
         std::cout << "========================================" << '\n';
         std::cout << "Tests run: " << results.size() << '\n';
-        std::cout << "Passed: " << passed << '\n';
-        std::cout << "Failed: " << failed << '\n';
+        std::cout << "✓ Tests passed: " << passed << '\n';
+        std::cout << "✗ Tests failed: " << failed << '\n';
         std::cout << '\n';
 
         // Calculate average performance

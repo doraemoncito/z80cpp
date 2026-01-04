@@ -225,7 +225,7 @@ inline BenchmarkResult runBenchmark(const BenchmarkConfig& config) {
     if (result.instructions > 0) {
         std::cout << "  MIPS: " << result.mips << "\n";
     }
-    std::cout << "  Result: " << (result.passed ? "Passed" : "Failed") << "\n\n";
+    std::cout << "  Result: " << (result.passed ? "✓ passed" : "✗ failed") << "\n\n";
 
     return result;
 }

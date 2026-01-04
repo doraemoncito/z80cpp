@@ -177,13 +177,13 @@ void Z80SimTest::handleStringOutput() {
      */
     if (output.find("  OK\n") != std::string::npos) {
         std::ostringstream oss;
-        oss << "Passed " << std::setw(6) << std::fixed << std::setprecision(3)
+        oss << "✓ Passed " << std::setw(6) << std::fixed << std::setprecision(3)
             << static_cast<float>(elapsed_ms) / 1000.0f << " sec\n";
         output.replace(output.find("OK\n"), 3, oss.str());
         total_ms += elapsed_ms;
         ++num_tests;
     } else if (output.find("  ERROR") != std::string::npos) {
-        output.replace(output.find("ERROR"), 5, "Failed");
+        output.replace(output.find("ERROR"), 5, "✗ Failed");
         ++failed;
     }
     std::cout << output << std::flush;

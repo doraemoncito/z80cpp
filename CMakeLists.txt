@@ -7,15 +7,15 @@
 cmake_minimum_required (VERSION 3.25.1)
 project (z80cpp)
 
-# Set the rpath policy and C++ version for MacOS builds
+# Set the rpath policy and C++ version
 if (${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
     # set the RPATH policy
     set(CMAKE_MACOSX_RPATH 1)
-
-    # specify the C++ standard
-    set(CMAKE_CXX_STANDARD 14)
-    set(CMAKE_CXX_STANDARD_REQUIRED True)
 endif()
+
+# Specify the C++ standard for all platforms
+set(CMAKE_CXX_STANDARD 14)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 set (API_REVISION 1)
 set (VERSION_MAJOR 0)
@@ -24,7 +24,7 @@ set (RELEASE_TYPE "")
 set (VERSION_STR "${API_REVISION}.${VERSION_MAJOR}.${VERSION_MINOR}${RELEASE_TYPE}")
 
 if (CMAKE_COMPILER_IS_GNUCXX)
-    set (CMAKE_CXX_FLAGS "-Wall -O3 -std=c++14")
+    set (CMAKE_CXX_FLAGS "-Wall -O3")
 endif ()
 
 include_directories(BEFORE . include)

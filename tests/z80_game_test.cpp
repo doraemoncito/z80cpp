@@ -3,12 +3,32 @@
 
 #include "benchmark_shared.hpp"
 #include <algorithm>
-#include <filesystem>
+#include <cstring>
 #include <fstream>
 #include <iostream>
 #include <vector>
+#include <iomanip>
+#include <dirent.h>
+#include <sys/stat.h>
 
-namespace fs = std::filesystem;
+// Helper to get filename without extension (C++14 compatible)
+std::string get_stem(const std::string& path) {
+    size_t last_slash = path.find_last_of("/\\");
+    size_t start = (last_slash == std::string::npos) ? 0 : last_slash + 1;
+    
+    size_t last_dot = path.find_last_of('.');
+    size_t end = (last_dot == std::string::npos || last_dot < start) ? path.length() : last_dot;
+    
+    return path.substr(start, end - start);
+}
+
+// Helper to check if path ends with extension (C++14 compatible)
+bool has_extension(const std::string& path, const std::string& ext) {
+    if (path.length() < ext.length()) {
+        return false;
+    }
+    return path.compare(path.length() - ext.length(), ext.length(), ext) == 0;
+}
 
 // Helper to read a TAP block
 std::vector<uint8_t> read_tap_block(std::ifstream& tap_file) {
@@ -18,7 +38,7 @@ std::vector<uint8_t> read_tap_block(std::ifstream& tap_file) {
     }
 
     std::vector<uint8_t> data(length);
-    if (!tap_file.read(reinterpret_cast<char*>(data.data()), length)) {
+    if (!tap_file.read(reinterpret_cast<char*>(data.data()), static_cast<std::streamsize>(length))) {
         return {};
     }
 
@@ -34,7 +54,7 @@ bool load_game_from_tap(const std::string& tap_path, BenchmarkConfig& config) {
         return false;
     }
 
-    config.name = fs::path(tap_path).stem().string();
+    config.name = get_stem(tap_path);
     config.code.clear();
     config.load_address = 0;
     config.is_cpm_program = false;
@@ -58,6 +78,7 @@ bool load_game_from_tap(const std::string& tap_path, BenchmarkConfig& config) {
         if (flag == 0x00 && block.size() >= 19) {
             uint8_t block_type = block[1];
             uint16_t param1 = *reinterpret_cast<uint16_t*>(&block[14]); // Load address for code
+            std::memcpy(&param1, &block[14], sizeof(param1));
 
             if (block_type == 0x03) { // Code
                 // Read the data block immediately following
@@ -86,6 +107,9 @@ bool load_game_from_tap(const std::string& tap_path, BenchmarkConfig& config) {
 }
 
 int main(int argc, char* argv[]) {
+    (void)argc; // Suppress unused parameter warning
+    (void)argv;
+    
     try {
         std::cout << "========================================" << '\n';
         std::cout << "Z80 Game Benchmark Test Suite" << '\n';
@@ -96,12 +120,17 @@ int main(int argc, char* argv[]) {
         std::vector<std::string> tap_files;
         const std::string roms_dir = "roms";
 
-        if (fs::exists(roms_dir) && fs::is_directory(roms_dir)) {
-            for (const auto& entry : fs::directory_iterator(roms_dir)) {
-                if (entry.is_regular_file() && entry.path().extension() == ".tap") {
-                    tap_files.push_back(entry.path().string());
+        // C++14 compatible directory listing using POSIX APIs
+        DIR* dir = opendir(roms_dir.c_str());
+        if (dir != nullptr) {
+            struct dirent* entry;
+            while ((entry = readdir(dir)) != nullptr) {
+                std::string filename = entry->d_name;
+                if (has_extension(filename, ".tap")) {
+                    tap_files.push_back(roms_dir + "/" + filename);
                 }
             }
+            closedir(dir);
             std::sort(tap_files.begin(), tap_files.end());
         } else {
             std::cerr << "Warning: roms directory not found\n";
@@ -137,8 +166,8 @@ int main(int argc, char* argv[]) {
         std::cout << "Summary" << '\n';
         std::cout << "========================================" << '\n';
         std::cout << "Tests run: " << results.size() << '\n';
-        std::cout << "Passed: " << passed << '\n';
-        std::cout << "Failed: " << failed << '\n';
+        std::cout << "✓ Tests passed: " << passed << '\n';
+        std::cout << "✗ Tests failed: " << failed << '\n';
         std::cout << '\n';
 
         // Calculate average performance
