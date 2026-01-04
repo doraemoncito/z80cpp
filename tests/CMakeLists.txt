@@ -42,7 +42,7 @@ add_executable(z80_benchmark_test
     z80_benchmark_test.cpp
 )
 
-target_compile_features(z80_benchmark_test PRIVATE cxx_std_17)
+target_compile_features(z80_benchmark_test PRIVATE cxx_std_14)
 
 if(TARGET z80cpp-static)
     target_link_libraries(z80_benchmark_test PRIVATE z80cpp::z80cpp-static)
@@ -66,7 +66,7 @@ add_executable(z80_game_test
     z80_game_test.cpp
 )
 
-target_compile_features(z80_game_test PRIVATE cxx_std_17)
+target_compile_features(z80_game_test PRIVATE cxx_std_14)
 
 if(TARGET z80cpp-static)
     target_link_libraries(z80_game_test PRIVATE z80cpp::z80cpp-static)
