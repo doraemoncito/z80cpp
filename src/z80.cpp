@@ -4291,7 +4291,7 @@ void Z80::decodeDDFD(uint8_t opCode, RegisterPair& regIXY) {
         }
         case 0xB6:
         { /* OR (IX+d) */
-            REG_WZ = regIXY.word + (int8_t) Z80opsImpl->peek8(REG_PC);
+            REG_WZ = regIXY.word + static_cast<int8_t>(Z80opsImpl->peek8(REG_PC));
             Z80opsImpl->addressOnBus(REG_PC, 5);
             REG_PC++;
             or_(Z80opsImpl->peek8(REG_WZ));
@@ -4309,7 +4309,7 @@ void Z80::decodeDDFD(uint8_t opCode, RegisterPair& regIXY) {
         }
         case 0xBE:
         { /* CP (IX+d) */
-            REG_WZ = regIXY.word + (int8_t) Z80opsImpl->peek8(REG_PC);
+            REG_WZ = regIXY.word + static_cast<int8_t>(Z80opsImpl->peek8(REG_PC));
             Z80opsImpl->addressOnBus(REG_PC, 5);
             REG_PC++;
             cp(Z80opsImpl->peek8(REG_WZ));
@@ -4317,7 +4317,7 @@ void Z80::decodeDDFD(uint8_t opCode, RegisterPair& regIXY) {
         }
         case 0xCB:
         { /* Subconjunto de instrucciones */
-            REG_WZ = regIXY.word + (int8_t) Z80opsImpl->peek8(REG_PC);
+            REG_WZ = regIXY.word + static_cast<int8_t>(Z80opsImpl->peek8(REG_PC));
             REG_PC++;
             opCode = Z80opsImpl->peek8(REG_PC);
             Z80opsImpl->addressOnBus(REG_PC, 2);

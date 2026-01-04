@@ -32,6 +32,10 @@ include_directories(BEFORE . include)
 set (z80cpp_sources src/z80.cpp include/z80.h include/z80operations.h )
 add_library (z80cpp-static STATIC ${z80cpp_sources})
 set_target_properties (z80cpp-static PROPERTIES OUTPUT_NAME z80cpp)
+
+# Create alias for the target
+add_library(z80cpp::z80cpp-static ALIAS z80cpp-static)
+
 if (NOT DEFINED Z80CPP_STATIC_ONLY)
     add_library (z80cpp SHARED ${z80cpp_sources})
 # Affects Win32 only: avoid dynamic/static *.lib files naming conflict 
@@ -56,14 +60,25 @@ if (NOT DEFINED Z80CPP_STATIC_ONLY)
     install (TARGETS z80cpp LIBRARY DESTINATION ${LIB_DIR} ARCHIVE DESTINATION ${LIB_DIR})
 endif ()
 
-# Enable running the test simulator as part the `make test` target
-set( TEST_SOURCES example/z80sim.cpp example/z80sim.h )
-add_executable( z80sim ${TEST_SOURCES} )
-target_link_libraries( z80sim z80cpp-static )
-configure_file( example/zexall.bin zexall.bin COPYONLY )
+configure_file( tests/zexall.bin zexall.bin COPYONLY )
 
-enable_testing( ) 
-add_test( NAME z80sim COMMAND z80sim )
+enable_testing( )
+
+# Configure CTest to always show output for all tests (pass or fail)
+set(CTEST_OUTPUT_ON_FAILURE ON)
+
+# Set verbose output for all CTest invocations
+list(APPEND CMAKE_CTEST_ARGUMENTS "--verbose" "--output-on-failure")
+
+# Add tests subdirectory
+add_subdirectory(tests)
+
+# Add a custom test target that runs with verbose output
+add_custom_target(test-verbose
+    COMMAND ${CMAKE_CTEST_COMMAND} --verbose
+    DEPENDS z80_sim_test z80_benchmark_test z80_game_test
+    COMMENT "Running all tests with verbose output"
+)
 
 install( TARGETS z80cpp-static LIBRARY DESTINATION ${LIB_DIR} ARCHIVE DESTINATION ${LIB_DIR} )
 install( DIRECTORY include/ DESTINATION include/z80cpp PATTERN "*.h" )
