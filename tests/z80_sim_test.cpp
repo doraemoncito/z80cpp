@@ -74,7 +74,7 @@ void Z80SimTest::interruptHandlingTime(int32_t wstates) {
 }
 
 bool Z80SimTest::isActiveINT() {
-    // Put here the needed logic to trigger an INT
+    // Put here the logic needed to trigger an INT
     return false;
 }
 
