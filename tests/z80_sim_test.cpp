@@ -83,83 +83,45 @@ void Z80SimTest::execDone(void) {
 }
 #endif
 
+uint8_t Z80SimTest::breakpoint(uint16_t address, uint8_t opcode) {
+    // Only handle CP/M BDOS calls if in CP/M mode
+    if (!cpmMode) {
+        return opcode; // No breakpoint handling for raw Z80 programs
+    }
+
 #ifdef WITH_BREAKPOINT_SUPPORT
-uint8_t Z80SimTest::breakpoint(uint16_t address, uint8_t opcode) {
-    // Only handle CP/M BDOS calls if in CP/M mode
-    if (!cpmMode) {
-        return opcode; // No breakpoint handling for raw Z80 programs
-    }
-
     // Emulate CP/M Syscall at address 5
     if (address != 0x0005) {
         return opcode;
     }
-
-    switch (cpu->getRegC()) {
-        case 0: // BDOS 0 System Reset
-        {
-            std::cout << '\n' << "Z80 reset after " << tstates << " t-states\n";
-            finish = true;
-            return opcode;
-        }
-        case 2: // BDOS 2 console char output
-        {
-            std::cout << static_cast<char>(cpu->getRegE());
-            return opcode;
-        }
-        case 9: // BDOS 9 console string output (string terminated by "$")
-        {
-            handleStringOutput();
-            return opcode;
-        }
-        default: {
-            std::cout << "BDOS Call " << static_cast<unsigned int>(cpu->getRegC()) << '\n';
-            finish = true;
-            std::cout << finish << '\n';
-        }
-    }
-    // opcode would be modified before the decodeOpcode method
-    return opcode;
-}
-#else
-uint8_t Z80SimTest::breakpoint(uint16_t address, uint8_t opcode) {
-    // Only handle CP/M BDOS calls if in CP/M mode
-    if (!cpmMode) {
-        return opcode; // No breakpoint handling for raw Z80 programs
-    }
-
-    // Emulate CP/M Syscall at address 5
-    if (address != 0x0005) {
-        return opcode;
-    }
-
-    switch (cpu->getRegC()) {
-        case 0: // BDOS 0 System Reset
-        {
-            std::cout << '\n' << "Z80 reset after " << tstates << " t-states\n";
-            finish = true;
-            return opcode;
-        }
-        case 2: // BDOS 2 console char output
-        {
-            std::cout << static_cast<char>(cpu->getRegE());
-            return opcode;
-        }
-        case 9: // BDOS 9 console string output (string terminated by "$")
-        {
-            handleStringOutput();
-            return opcode;
-        }
-        default: {
-            std::cout << "BDOS Call " << static_cast<unsigned int>(cpu->getRegC()) << '\n';
-            finish = true;
-            std::cout << finish << '\n';
-        }
-    }
-    // opcode would be modified before the decodeOpcode method
-    return opcode;
-}
 #endif
+
+    switch (cpu->getRegC()) {
+        case 0: // BDOS 0 System Reset
+        {
+            std::cout << '\n' << "Z80 reset after " << tstates << " t-states\n";
+            finish = true;
+            return opcode;
+        }
+        case 2: // BDOS 2 console char output
+        {
+            std::cout << static_cast<char>(cpu->getRegE());
+            return opcode;
+        }
+        case 9: // BDOS 9 console string output (string terminated by "$")
+        {
+            handleStringOutput();
+            return opcode;
+        }
+        default: {
+            std::cout << "BDOS Call " << static_cast<unsigned int>(cpu->getRegC()) << '\n';
+            finish = true;
+            std::cout << finish << '\n';
+        }
+    }
+    // opcode would be modified before the decodeOpcode method
+    return opcode;
+}
 
 void Z80SimTest::handleStringOutput() {
     uint16_t strAddr = cpu->getRegDE();
