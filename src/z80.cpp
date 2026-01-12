@@ -483,8 +483,8 @@ void Z80::or_(uint8_t oper8) {
 
 // Operación de comparación con el registro A
 // es como SUB, pero solo afecta a los flags
-// Los flags SIGN y ZERO se calculan a partir del resultado
-// Los flags 3 y 5 se copian desde el operando (sigh!)
+//  SIGN y ZERO se calculan a partir del resultado
+// Los flags 3 y 5 se copian desde el operando (¡sigh!)
 void Z80::cp(uint8_t oper8) {
     auto res = static_cast<int16_t>(regA - oper8);
 

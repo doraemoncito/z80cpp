@@ -4,7 +4,7 @@
 #   cmake -G Xcode ..
 #
 
-cmake_minimum_required (VERSION 3.25.1)
+cmake_minimum_required (VERSION 3.22.1)
 project (z80cpp)
 
 # Set the rpath policy and C++ version
@@ -37,7 +37,8 @@ set_target_properties (z80cpp-static PROPERTIES OUTPUT_NAME z80cpp)
 add_library(z80cpp::z80cpp-static ALIAS z80cpp-static)
 
 if (NOT DEFINED Z80CPP_STATIC_ONLY)
-    add_library (z80cpp SHARED ${z80cpp_sources})
+    add_library (z80cpp SHARED ${z80cpp_sources}
+            .devcontainer/Dockerfile)
 # Affects Win32 only: avoid dynamic/static *.lib files naming conflict 
     set_target_properties (z80cpp-static PROPERTIES PREFIX "lib")
 endif ()
