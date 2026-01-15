@@ -1,0 +1,22 @@
+{
+  "name": "Z80 C++ ARM64 Cross-Compilation",
+  "build": {
+    "dockerfile": "Dockerfile"
+  },
+  "customizations": {
+    "vscode": {
+      "extensions": [
+        "ms-vscode.cmake-tools",
+        "ms-vscode.cpptools",
+        "twxs.cmake"
+      ],
+      "settings": {
+        "cmake.configureArgs": [
+          "-DCMAKE_TOOLCHAIN_FILE=/opt/toolchain-aarch64.cmake"
+        ]
+      }
+    }
+  },
+  "postCreateCommand": "sudo bash -c 'echo \"#!/bin/bash\" > /usr/local/bin/cmake-rpi && echo \"cmake -DCMAKE_TOOLCHAIN_FILE=/opt/toolchain-aarch64.cmake \\\"\\$@\\\"\" >> /usr/local/bin/cmake-rpi && chmod +x /usr/local/bin/cmake-rpi' && echo 'ARM64 cross-compilation environment ready. Use: cmake-rpi .. (or cmake -DCMAKE_TOOLCHAIN_FILE=/opt/toolchain-aarch64.cmake ..)'",
+  "remoteUser": "vscode"
+}

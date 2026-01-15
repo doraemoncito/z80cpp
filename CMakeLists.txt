@@ -36,13 +36,14 @@ if (${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
     set(CMAKE_MACOSX_RPATH 1)
 endif()
 
-# Option for native architecture optimization (disable for distributable binaries)
+# Options
 option(Z80CPP_NATIVE_ARCH "Use -march=native for local optimization" ON)
-
-# Option for Link-Time Optimization (LTO)
 option(Z80CPP_ENABLE_LTO "Enable Link-Time Optimization" ON)
+option(Z80CPP_ENABLE_CCACHE "Enable ccache for faster rebuilds" ON)
+option(Z80CPP_PARALLEL_BUILD "Enable parallel builds using all CPU cores" ON)
+option(Z80CPP_ENABLE_TESTING "Build test simulator target" ${BUILD_TESTING})
 
-# Check LTO support and enable if requested
+# LTO
 if(Z80CPP_ENABLE_LTO)
     check_ipo_supported(RESULT Z80CPP_LTO_SUPPORTED OUTPUT Z80CPP_LTO_OUTPUT)
     if(Z80CPP_LTO_SUPPORTED)
@@ -55,10 +56,7 @@ else()
     message(STATUS "Link-Time Optimization (LTO): Disabled")
 endif()
 
-# Option for ccache (compiler cache for faster rebuilds)
-option(Z80CPP_ENABLE_CCACHE "Enable ccache for faster rebuilds" ON)
-
-# Check for ccache and enable if available
+# ccache
 if(Z80CPP_ENABLE_CCACHE)
     find_program(CCACHE_EXECUTABLE ccache)
     if(CCACHE_EXECUTABLE)
@@ -71,9 +69,7 @@ if(Z80CPP_ENABLE_CCACHE)
     endif()
 endif()
 
-# Option for parallel builds (default: use all available CPU cores)
-option(Z80CPP_PARALLEL_BUILD "Enable parallel builds using all CPU cores" ON)
-
+# Parallel builds hint
 if(Z80CPP_PARALLEL_BUILD)
     include(ProcessorCount)
     ProcessorCount(N)
@@ -85,9 +81,8 @@ if(Z80CPP_PARALLEL_BUILD)
     endif()
 endif()
 
-# Set optimization flags for all compilers
+# Set optimization flags per compiler
 if (CMAKE_CXX_COMPILER_ID MATCHES "GNU")
-    # GCC
     message(STATUS "Configuring for GCC")
     set (CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall")
     if (CMAKE_BUILD_TYPE STREQUAL "Release" OR CMAKE_BUILD_TYPE STREQUAL "RelWithDebInfo")
@@ -97,7 +92,6 @@ if (CMAKE_CXX_COMPILER_ID MATCHES "GNU")
         endif()
     endif()
 elseif (CMAKE_CXX_COMPILER_ID MATCHES "Clang" OR CMAKE_CXX_COMPILER_ID MATCHES "AppleClang")
-    # Clang and AppleClang
     message(STATUS "Configuring for Clang/AppleClang")
     set (CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall")
     if (CMAKE_BUILD_TYPE STREQUAL "Release" OR CMAKE_BUILD_TYPE STREQUAL "RelWithDebInfo")
@@ -107,7 +101,6 @@ elseif (CMAKE_CXX_COMPILER_ID MATCHES "Clang" OR CMAKE_CXX_COMPILER_ID MATCHES "
         endif()
     endif()
 elseif (MSVC)
-    # MSVC
     message(STATUS "Configuring for MSVC")
     set (CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /W3")
     if (CMAKE_BUILD_TYPE STREQUAL "Release" OR CMAKE_BUILD_TYPE STREQUAL "RelWithDebInfo")
@@ -117,22 +110,21 @@ endif ()
 
 message(STATUS "Final CXX flags: ${CMAKE_CXX_FLAGS}")
 
-option(Z80CPP_ENABLE_TESTING "Build test simulator target" ${BUILD_TESTING})
-
+# Verbose CTest output when tests are enabled
 if(Z80CPP_ENABLE_TESTING)
     set(CMAKE_CTEST_ARGUMENTS --verbose --output-on-failure)
 endif()
 
-
+# Public headers
 set(z80cpp_headers
     include/z80.h
     include/z80_bus_interface.h
     include/z80_types.h
 )
 
-# Helper function to configure common properties for header-only library
+# Configure INTERFACE target (header-only)
 function(z80cpp_configure_target target_name)
-    target_compile_features(${target_name} INTERFACE cxx_std_14)
+    target_compile_features(${target_name} INTERFACE cxx_std_17)
     target_include_directories(${target_name}
         INTERFACE
             $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/include>
@@ -140,12 +132,11 @@ function(z80cpp_configure_target target_name)
     )
 endfunction()
 
-# Create header-only library
+# Create header-only libraries
 add_library(z80cpp INTERFACE)
 add_library(z80cpp::z80cpp ALIAS z80cpp)
 z80cpp_configure_target(z80cpp)
 
-# For backward compatibility, also create z80cpp-static as an alias
 add_library(z80cpp-static INTERFACE)
 add_library(z80cpp::z80cpp-static ALIAS z80cpp-static)
 z80cpp_configure_target(z80cpp-static)
@@ -157,12 +148,13 @@ install(
     INCLUDES DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/z80cpp
 )
 
+# Tests
 if(Z80CPP_ENABLE_TESTING AND BUILD_TESTING)
     enable_testing()
     add_subdirectory(tests)
 endif()
 
-# Installation of headers (project level)
+# Install headers
 install(
     DIRECTORY include/
     DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/z80cpp
@@ -171,7 +163,7 @@ install(
         PATTERN "*.tpp"
 )
 
-# Package Configuration
+# Package configuration
 install(
     EXPORT z80cppTargets
     NAMESPACE z80cpp::
@@ -197,7 +189,7 @@ install(
     DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/z80cpp
 )
 
-# Clang-format support
+# clang-format support
 find_program(CLANG_FORMAT_EXECUTABLE clang-format)
 if(CLANG_FORMAT_EXECUTABLE)
     file(GLOB_RECURSE ALL_SOURCE_FILES
@@ -206,13 +198,13 @@ if(CLANG_FORMAT_EXECUTABLE)
         ${CMAKE_CURRENT_SOURCE_DIR}/tests/*.cpp
         ${CMAKE_CURRENT_SOURCE_DIR}/tests/*.h
     )
-    
+
     add_custom_target(
         format
         COMMENT "Running clang-format to format source files..."
         COMMAND ${CLANG_FORMAT_EXECUTABLE} -i ${ALL_SOURCE_FILES}
     )
-    
+
     add_custom_target(
         format-check
         COMMENT "Checking code formatting with clang-format..."
@@ -220,17 +212,17 @@ if(CLANG_FORMAT_EXECUTABLE)
     )
 endif()
 
-# Clang-tidy support
+# clang-tidy support
 find_program(CLANG_TIDY_EXECUTABLE NAMES clang-tidy clang-tidy-17 clang-tidy-16)
 if(CLANG_TIDY_EXECUTABLE)
     file(GLOB_RECURSE ALL_SOURCE_FILES_CPP
         ${CMAKE_CURRENT_SOURCE_DIR}/tests/*.cpp
     )
-    
+
     add_custom_target(lint
         COMMENT "Running clang-tidy..."
     )
-    
+
     foreach(_file IN LISTS ALL_SOURCE_FILES_CPP)
         add_custom_command(TARGET lint POST_BUILD
             COMMAND ${CLANG_TIDY_EXECUTABLE} -quiet "${_file}" -- -std=c++17

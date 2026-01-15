@@ -1,11 +1,12 @@
 cmake_minimum_required (VERSION 3.25.1)
 
+# Simulator test
 add_executable(z80_sim_test
     z80_sim_test.cpp
     z80_sim_test.h
 )
 
-target_compile_features(z80_sim_test PRIVATE cxx_std_14)
+target_compile_features(z80_sim_test PRIVATE cxx_std_17)
 
 if(TARGET z80cpp-static)
     target_link_libraries(z80_sim_test PRIVATE z80cpp::z80cpp-static)
@@ -51,7 +52,7 @@ add_test(
     WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
 )
 
-# Game Benchmark Tests
+# Game Benchmark Tests (only if .tap files exist)
 file(GLOB TAP_FILES "${CMAKE_CURRENT_SOURCE_DIR}/roms/*.tap")
 list(LENGTH TAP_FILES TAP_FILES_COUNT)
 

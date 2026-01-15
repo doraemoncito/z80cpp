@@ -205,76 +205,75 @@ This table presents detailed timing measurements from the Z80all instruction exe
 
 | #           | Instruction group            | Baseline (sec) | Optimized (sec) | Speedup (%) |
 |-------------|------------------------------|---------------:|----------------:|------------:|
-| 1           | <adc,sbc> hl,<bc,de,hl,sp>   |          4.290 |           0.870 |       79.7% |
-| 2           | add hl,<bc,de,hl,sp>         |          2.098 |           0.420 |       80.0% |
-| 3           | add ix,<bc,de,ix,sp>         |          2.125 |           0.420 |       80.2% |
-| 4           | add iy,<bc,de,iy,sp>         |          2.120 |           0.426 |       79.9% |
-| 5           | aluop a,nn                   |          1.063 |           0.213 |       79.9% |
-| 6           | aluop a,<b,c,d,e,h,l,(hl),a> |         37.504 |           7.422 |       80.1% |
-| 7           | aluop a,<ixh,ixl,iyh,iyl>    |         19.405 |           3.792 |       80.5% |
-| 8           | aluop a,(<ix,iy>+1)          |          9.732 |           1.922 |       80.3% |
-| 9           | bit n,(<ix,iy>+1)            |          0.076 |           0.014 |       81.6% |
-| 10          | bit n,<b,c,d,e,h,l,(hl),a>   |          2.462 |           0.481 |       80.5% |
-| 11          | cpd<r>                       |          0.475 |           0.094 |       80.2% |
-| 12          | cpi<r>                       |          0.475 |           0.093 |       80.4% |
-| 13          | <daa,cpl,scf,ccf>            |          2.073 |           0.410 |       80.2% |
-| 14          | <inc,dec> a                  |          0.111 |           0.022 |       80.2% |
-| 15          | <inc,dec> b                  |          0.111 |           0.021 |       81.1% |
-| 16          | <inc,dec> bc                 |          0.058 |           0.011 |       81.0% |
-| 17          | <inc,dec> c                  |          0.112 |           0.022 |       80.4% |
-| 18          | <inc,dec> d                  |          0.112 |           0.022 |       80.4% |
-| 19          | <inc,dec> de                 |          0.056 |           0.011 |       80.4% |
-| 20          | <inc,dec> e                  |          0.112 |           0.021 |       81.3% |
-| 21          | <inc,dec> h                  |          0.111 |           0.022 |       80.2% |
-| 22          | <inc,dec> hl                 |          0.057 |           0.011 |       80.7% |
-| 23          | <inc,dec> ix                 |          0.057 |           0.011 |       80.7% |
-| 24          | <inc,dec> iy                 |          0.057 |           0.011 |       80.7% |
-| 25          | <inc,dec> l                  |          0.112 |           0.022 |       80.4% |
-| 26          | <inc,dec> (hl)               |          0.111 |           0.022 |       80.2% |
-| 27          | <inc,dec> sp                 |          0.057 |           0.011 |       80.7% |
-| 28          | <inc,dec> (<ix,iy>+1)        |          0.235 |           0.046 |       80.4% |
-| 29          | <inc,dec> ixh                |          0.112 |           0.022 |       80.4% |
-| 30          | <inc,dec> ixl                |          0.114 |           0.022 |       80.7% |
-| 31          | <inc,dec> iyh                |          0.112 |           0.022 |       80.4% |
-| 32          | <inc,dec> iyl                |          0.112 |           0.022 |       80.4% |
-| 33          | ld <bc,de>,(nnnn)            |          0.001 |           0.000 |      100.0% |
+| 1           | <adc,sbc> hl,<bc,de,hl,sp>   |          4.290 |           0.870 |        79.7 |
+| 2           | add hl,<bc,de,hl,sp>         |          2.098 |           0.420 |        80.0 |
+| 3           | add ix,<bc,de,ix,sp>         |          2.125 |           0.420 |        80.2 |
+| 4           | add iy,<bc,de,iy,sp>         |          2.120 |           0.426 |        79.9 |
+| 5           | aluop a,nn                   |          1.063 |           0.213 |        79.9 |
+| 6           | aluop a,<b,c,d,e,h,l,(hl),a> |         37.504 |           7.422 |        80.1 |
+| 7           | aluop a,<ixh,ixl,iyh,iyl>    |         19.405 |           3.792 |        80.5 |
+| 8           | aluop a,(<ix,iy>+1)          |          9.732 |           1.922 |        80.3 |
+| 9           | bit n,(<ix,iy>+1)            |          0.076 |           0.014 |        81.6 |
+| 10          | bit n,<b,c,d,e,h,l,(hl),a>   |          2.462 |           0.481 |        80.5 |
+| 11          | cpd<r>                       |          0.475 |           0.094 |        80.2 |
+| 12          | cpi<r>                       |          0.475 |           0.093 |        80.4 |
+| 13          | <daa,cpl,scf,ccf>            |          2.073 |           0.410 |        80.2 |
+| 14          | <inc,dec> a                  |          0.111 |           0.022 |        80.2 |
+| 15          | <inc,dec> b                  |          0.111 |           0.021 |        81.1 |
+| 16          | <inc,dec> bc                 |          0.058 |           0.011 |        81.0 |
+| 17          | <inc,dec> c                  |          0.112 |           0.022 |        80.4 |
+| 18          | <inc,dec> d                  |          0.112 |           0.022 |        80.4 |
+| 19          | <inc,dec> de                 |          0.056 |           0.011 |        80.4 |
+| 20          | <inc,dec> e                  |          0.112 |           0.021 |        81.3 |
+| 21          | <inc,dec> h                  |          0.111 |           0.022 |        80.2 |
+| 22          | <inc,dec> hl                 |          0.057 |           0.011 |        80.7 |
+| 23          | <inc,dec> ix                 |          0.057 |           0.011 |        80.7 |
+| 24          | <inc,dec> iy                 |          0.057 |           0.011 |        80.7 |
+| 25          | <inc,dec> l                  |          0.112 |           0.022 |        80.4 |
+| 26          | <inc,dec> (hl)               |          0.111 |           0.022 |        80.2 |
+| 27          | <inc,dec> sp                 |          0.057 |           0.011 |        80.7 |
+| 28          | <inc,dec> (<ix,iy>+1)        |          0.235 |           0.046 |        80.4 |
+| 29          | <inc,dec> ixh                |          0.112 |           0.022 |        80.4 |
+| 30          | <inc,dec> ixl                |          0.114 |           0.022 |        80.7 |
+| 31          | <inc,dec> iyh                |          0.112 |           0.022 |        80.4 |
+| 32          | <inc,dec> iyl                |          0.112 |           0.022 |        80.4 |
+| 33          | ld <bc,de>,(nnnn)            |          0.001 |           0.000 |       100.0 |
 | 34          | ld hl,(nnnn)                 |          0.000 |           0.000 |         N/A |
 | 35          | ld sp,(nnnn)                 |          0.000 |           0.000 |         N/A |
-| 36          | ld <ix,iy>,(nnnn)            |          0.001 |           0.000 |      100.0% |
-| 37          | ld (nnnn),<bc,de>            |          0.002 |           0.000 |      100.0% |
+| 36          | ld <ix,iy>,(nnnn)            |          0.001 |           0.000 |       100.0 |
+| 37          | ld (nnnn),<bc,de>            |          0.002 |           0.000 |       100.0 |
 | 38          | ld (nnnn),hl                 |          0.000 |           0.000 |         N/A |
 | 39          | ld (nnnn),sp                 |          0.000 |           0.000 |         N/A |
-| 40          | ld (nnnn),<ix,iy>            |          0.002 |           0.000 |      100.0% |
-| 41          | ld <bc,de,hl,sp>,nnnn        |          0.002 |           0.000 |      100.0% |
-| 42          | ld <ix,iy>,nnnn              |          0.001 |           0.000 |      100.0% |
-| 43          | ld a,<(bc),(de)>             |          0.001 |           0.000 |      100.0% |
-| 44          | ld <b,c,d,e,h,l,(hl),a>,nn   |          0.002 |           0.000 |      100.0% |
-| 45          | ld (<ix,iy>+1),nn            |          0.001 |           0.000 |      100.0% |
-| 46          | ld <b,c,d,e>,(<ix,iy>+1)     |          0.019 |           0.004 |       78.9% |
-| 47          | ld <h,l>,(<ix,iy>+1)         |          0.009 |           0.001 |       88.9% |
-| 48          | ld a,(<ix,iy>+1)             |          0.004 |           0.000 |      100.0% |
-| 49          | ld <ixh,ixl,iyh,iyl>,nn      |          0.001 |           0.000 |      100.0% |
-| 50          | ld <bcdehla>,<bcdehla>       |          0.177 |           0.033 |       81.4% |
-| 51          | ld <bcdexya>,<bcdexya>       |          0.355 |           0.069 |       80.6% |
-| 52          | ld a,(nnnn) / ld (nnnn),a    |          0.001 |           0.000 |      100.0% |
-| 53          | ldd<r> (1)                   |          0.001 |           0.000 |      100.0% |
-| 54          | ldd<r> (2)                   |          0.001 |           0.000 |      100.0% |
-| 55          | ldi<r> (1)                   |          0.001 |           0.000 |      100.0% |
-| 56          | ldi<r> (2)                   |          0.001 |           0.000 |      100.0% |
-| 57          | neg                          |          0.485 |           0.096 |       80.2% |
-| 58          | <rrd,rld>                    |          0.264 |           0.052 |       80.3% |
-| 59          | <rlca,rrca,rla,rra>          |          0.226 |           0.045 |       80.1% |
-| 60          | shf/rot (<ix,iy>+1)          |          0.015 |           0.003 |       80.0% |
-| 61          | shf/rot <b,c,d,e,h,l,(hl),a> |          0.348 |           0.069 |       80.2% |
-| 62          | <set,res> n,<bcdehl(hl)a>    |          0.346 |           0.068 |       80.3% |
-| 63          | <set,res> n,(<ix,iy>+1)      |          0.016 |           0.003 |       81.3% |
-| 64          | ld (<ix,iy>+1),<b,c,d,e>     |          0.044 |           0.009 |       79.5% |
-| 65          | ld (<ix,iy>+1),<h,l>         |          0.009 |           0.001 |       88.9% |
-| 66          | ld (<ix,iy>+1),a             |          0.002 |           0.000 |      100.0% |
-| 67          | ld (<bc,de>),a               |          0.003 |           0.000 |      100.0% |
+| 40          | ld (nnnn),<ix,iy>            |          0.002 |           0.000 |       100.0 |
+| 41          | ld <bc,de,hl,sp>,nnnn        |          0.002 |           0.000 |       100.0 |
+| 42          | ld <ix,iy>,nnnn              |          0.001 |           0.000 |       100.0 |
+| 43          | ld a,<(bc),(de)>             |          0.001 |           0.000 |       100.0 |
+| 44          | ld <b,c,d,e,h,l,(hl),a>,nn   |          0.002 |           0.000 |       100.0 |
+| 45          | ld (<ix,iy>+1),nn            |          0.001 |           0.000 |       100.0 |
+| 46          | ld <b,c,d,e>,(<ix,iy>+1)     |          0.019 |           0.004 |        78.9 |
+| 47          | ld <h,l>,(<ix,iy>+1)         |          0.009 |           0.001 |        88.9 |
+| 48          | ld a,(<ix,iy>+1)             |          0.004 |           0.000 |       100.0 |
+| 49          | ld <ixh,ixl,iyh,iyl>,nn      |          0.001 |           0.000 |       100.0 |
+| 50          | ld <bcdehla>,<bcdehla>       |          0.177 |           0.033 |        81.4 |
+| 51          | ld <bcdexya>,<bcdexya>       |          0.355 |           0.069 |        80.6 |
+| 52          | ld a,(nnnn) / ld (nnnn),a    |          0.001 |           0.000 |       100.0 |
+| 53          | ldd<r> (1)                   |          0.001 |           0.000 |       100.0 |
+| 54          | ldd<r> (2)                   |          0.001 |           0.000 |       100.0 |
+| 55          | ldi<r> (1)                   |          0.001 |           0.000 |       100.0 |
+| 56          | ldi<r> (2)                   |          0.001 |           0.000 |       100.0 |
+| 57          | neg                          |          0.485 |           0.096 |        80.2 |
+| 58          | <rrd,rld>                    |          0.264 |           0.052 |        80.3 |
+| 59          | <rlca,rrca,rla,rra>          |          0.226 |           0.045 |        80.1 |
+| 60          | shf/rot (<ix,iy>+1)          |          0.015 |           0.003 |        80.0 |
+| 61          | shf/rot <b,c,d,e,h,l,(hl),a> |          0.348 |           0.069 |        80.2 |
+| 62          | <set,res> n,<bcdehl(hl)a>    |          0.346 |           0.068 |        80.3 |
+| 63          | <set,res> n,(<ix,iy>+1)      |          0.016 |           0.003 |        81.3 |
+| 64          | ld (<ix,iy>+1),<b,c,d,e>     |          0.044 |           0.009 |        79.5 |
+| 65          | ld (<ix,iy>+1),<h,l>         |          0.009 |           0.001 |        88.9 |
+| 66          | ld (<ix,iy>+1),a             |          0.002 |           0.000 |       100.0 |
+| 67          | ld (<bc,de>),a               |          0.003 |           0.000 |       100.0 |
 | **Total**   |                              |     **88.158** |      **17.404** |   **80.3%** |
 | **Average** |                              |      **1.316** |       **0.260** |   **80.3%** |
-
 
 ### Z80 Performance Benchmark Test Suite
 
@@ -287,6 +286,8 @@ This test suite measures the performance of the Z80 emulator core across various
 - **MT/s**: Million T-States per second (throughput)
 - **MIPS**: Million Instructions Per Second
 
+Results before optimization:
+
 | Test             | Elapsed (sec) |      T-States |    MT/s |  MIPS |
 |------------------|--------------:|--------------:|--------:|------:|
 | ZEXALL           |        13.241 | 8,099,612,806 | 611.700 | 0.755 |
@@ -295,11 +296,59 @@ This test suite measures the performance of the Z80 emulator core across various
 | Arithmetic Heavy |        10.093 | 4,781,818,189 | 473.791 | 0.495 |
 | Branch Heavy     |         4.114 | 4,000,410,001 | 972.331 | 0.729 |
 
+Results after optimization:
 
-| Test             | Elapsed (sec) | Performance (MIPS) | Speedup (x) |
+| Test             | Elapsed (sec) | Performance (MIPS) | Speedup (%) |
 |------------------|--------------:|-------------------:|------------:|
 | ZEXALL           |          0.04 |             240.30 |      555.15 |
 | Instruction Mix  |          0.02 |             332.64 |      647.47 |
 | Memory Intensive |          0.00 |           48096.58 |      680.46 |
 | Arithmetic Heavy |          0.01 |             365.40 |      499.23 |
 | Branch Heavy     |          0.00 |            6954.51 |      589.48 |
+
+### Z80 Game Benchmark Test Suite
+
+This test suite is designed to measure and evaluate the performance characteristics of the Z80cpp emulator on real ZX Spectrum games. It provides benchmarks for CPU instruction execution, memory operations, and overall emulation speed to help identify optimization opportunities and track performance improvements across different versions.
+
+**Column descriptions:**
+- **Game**: Name of the ZX Spectrum game under test
+- **Time (sec)**: Total execution time in seconds
+- **T-States**: Total CPU clock cycles executed
+- **MT/s**: Million T-States per second (throughput)
+- **MIPS**: Million Instructions Per Second
+
+Results before optimization:
+
+| Game          | Time (sec) |      T-States |    MT/s |  MIPS |
+|---------------|-----------:|--------------:|--------:|------:|
+| Ant Attack    |     10.341 | 5,222,568,303 | 505.046 | 0.484 |
+| Arkanoid      |      8.831 | 4,875,000,001 | 552.034 | 0.566 |
+| Horace Skiing |      6.890 | 4,000,721,887 | 580.694 | 0.726 |
+| Jet Set Willy |      6.740 | 4,000,113,568 | 593.520 | 0.742 |
+| Manic Miner   |      9.386 | 8,312,414,602 | 885.635 | 0.533 |
+| Pyjamarama    |      5.436 | 4,000,176,409 | 735.807 | 0.920 |
+
+Results after optimization:
+
+| Game          | Time (sec) | Performance (MIPS) | Speedup (%) |
+|---------------|-----------:|-------------------:|------------:|
+| Ant Attack    |      0.021 |             241.76 |      280.62 |
+| Arkanoid      |      0.022 |             224.14 |      312.19 |
+| Horace Skiing |      0.012 |             418.42 |      478.34 |
+| Jet Set Willy |      0.011 |             442.89 |      506.18 |
+| Manic Miner   |      0.011 |             466.08 |      542.15 |
+| Pyjamarama    |      0.010 |             493.43 |      563.97 |
+
+
+
+## References
+
+- [Z80 Instruction Set](https://www.z80.info/zip/z80instr.pdf)
+- [ZX Spectrum Technical Specifications](https://www.zxnet.co.uk/faq/specs.html)
+- [Z80.info](https://www.z80.info/)
+- [ticalc.org Z80 Text Collection](https://www.ticalc.org/pub/text/z80/)
+- [Z80 Assembly Guide (.zip)](http://www.ticalc.org/pub/text/z80/z80asmg.zip)
+- [ticalc.org Z80 Index](http://www.ticalc.org/pub/text/z80/index.html)
+- [Z80 Undocumented (PDF)](http://www.myquest.nl/z80undocumented/z80-documented-v0.91.pdf)
+- [The Undocumented Z80 Documented](http://www.ticalc.org/archives/files/fileinfo/128/12883.html)
+- [Z80 Undocumented Features](http://www.ticalc.org/archives/files/fileinfo/1/109.html)

@@ -1,6 +1,12 @@
+# Editor and OS files
 .cache/
 .idea/
 .vscode/
 .DS_Store
+
+# Build directories
 build*/
+
+# Test ROMs
 tests/roms/*
+tests/roms/*.tap
