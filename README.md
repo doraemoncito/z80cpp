@@ -12,9 +12,31 @@ cmake ..
 make
 ```
 
+### Building with Devcontainer
+
+The project includes a devcontainer for cross-platform development and Raspberry Pi cross-compilation.
+
+**For native x86_64 builds:**
+```bash
+mkdir build
+cd build
+cmake ..
+make
+```
+
+**For ARM cross-compilation (Raspberry Pi 4):**
+```bash
+mkdir build-rpi
+cd build-rpi
+cmake -DCMAKE_TOOLCHAIN_FILE=/opt/toolchain-aarch64.cmake ..
+make
+```
+
+Note: After modifying the Dockerfile, rebuild the devcontainer for changes to take effect.
+
 Run tests with `make test` from the build directory. All test output is shown by default.
 
-The core have the same features of [Z80Core](https://github.com/jsanchezv/Z80Core):
+The core has the same features as [Z80Core](https://github.com/jsanchezv/Z80Core):
 
 * Complete instruction set emulation
 * Emulates the undocumented bits 3 & 5 from flags register
