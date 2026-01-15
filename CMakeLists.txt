@@ -37,8 +37,7 @@ set_target_properties (z80cpp-static PROPERTIES OUTPUT_NAME z80cpp)
 add_library(z80cpp::z80cpp-static ALIAS z80cpp-static)
 
 if (NOT DEFINED Z80CPP_STATIC_ONLY)
-    add_library (z80cpp SHARED ${z80cpp_sources}
-            .devcontainer/Dockerfile)
+    add_library (z80cpp SHARED ${z80cpp_sources})
 # Affects Win32 only: avoid dynamic/static *.lib files naming conflict 
     set_target_properties (z80cpp-static PROPERTIES PREFIX "lib")
 endif ()
