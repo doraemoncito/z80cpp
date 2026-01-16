@@ -39,6 +39,7 @@ class BenchmarkSim : public Z80BusInterface<BenchmarkSim> {
     std::array<uint8_t, 0x10000> ram{};
     uint64_t tstates{0};
     bool cpmMode{false};
+    volatile bool finished{false};
 
     BenchmarkSim() : cpu(*this) {
     }
