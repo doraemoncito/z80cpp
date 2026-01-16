@@ -190,7 +190,7 @@ void Z80SimTest::runTest(std::ifstream* fileStream) {
 
     std::cout << "\n";
     std::cout << "Elapsed T-state count:  " << tstates << "\n";
-    std::cout << "Cummulative test time:  " << static_cast<float>(total_ms) / 1000.0f << " sec\n";
+    std::cout << "Cumulative test time:  " << static_cast<float>(total_ms) / 1000.0f << " sec\n";
     if (num_tests > 0) {
         std::cout << "Average time per test: " << static_cast<float>(total_ms) / num_tests / 1000.0f << " sec\n\n";
         std::cout << "\xE2\x9C\x93 Tests passed: " << num_tests - failed << "\n";
