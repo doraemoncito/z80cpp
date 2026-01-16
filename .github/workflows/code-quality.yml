@@ -1,0 +1,68 @@
+name: Code Quality
+
+on: [push, pull_request]
+
+jobs:
+  formatting:
+    name: Check Code Formatting
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Install clang-format
+        run: sudo apt-get install -y clang-format
+      
+      - name: Check formatting
+        run: |
+          files=$(find include tests -type f \( -name "*.cpp" -o -name "*.h" -o -name "*.tpp" \))
+          for file in $files; do
+            clang-format --dry-run -Werror "$file" || exit 1
+          done
+          echo "All files are properly formatted!"
+
+  static-analysis:
+    name: Static Analysis with clang-tidy
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Install dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y clang-tidy cmake build-essential
+      
+      - name: Build with compile_commands.json
+        run: |
+          mkdir -p build
+          cd build
+          cmake -DCMAKE_EXPORT_COMPILE_COMMANDS=ON ..
+          make
+      
+      - name: Run clang-tidy
+        run: |
+          cd build
+          files=$(find ../tests -type f -name "*.cpp")
+          clang-tidy -p . $files
+
+  build:
+    name: Build Project
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Install dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y cmake build-essential
+      
+      - name: Build
+        run: |
+          mkdir -p build
+          cd build
+          cmake ..
+          make -j4
+      
+      - name: Run tests
+        run: |
+          cd build
+          ctest --output-on-failure

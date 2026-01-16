@@ -1,0 +1,9 @@
+@PACKAGE_INIT@
+
+include(CMakeFindDependencyMacro)
+
+if(NOT TARGET z80cpp::z80cpp AND NOT TARGET z80cpp::z80cpp-static)
+    include("${CMAKE_CURRENT_LIST_DIR}/z80cppTargets.cmake")
+endif()
+
+check_required_components(z80cpp)

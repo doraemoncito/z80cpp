@@ -1,7 +1,7 @@
 // Z80 Performance Benchmark Test Suite
 // Integrated C++ tests for CMake/CTest
 
-#include "benchmark_shared.hpp"
+#include "benchmark_shared.h"
 #include <algorithm>
 #include <cmath>
 #include <functional>
@@ -214,11 +214,11 @@ int main(int argc, char* argv[]) {
         // Min MIPS thresholds are conservative to avoid intermittent failures
         // is_cpm_program: true for CP/M programs (ZEXALL), false for raw Z80 code
         std::vector<BenchmarkConfig> benchmarks = {
-            {"ZEXALL", "zexall.bin", {}, 10000000, 0.1, true},                                  // CP/M program
-            {"Instruction Mix", "", generate_instruction_mix_test(10000), 5000000, 0.1, false}, // Raw Z80
-            {"Memory Intensive", "", generate_memory_intensive_test(1000), 2000000, 0.1, false}, // Raw Z80
-            {"Arithmetic Heavy", "", generate_arithmetic_test(50000), 5000000, 0.1, false},      // Raw Z80
-            {"Branch Heavy", "", generate_jump_test(10000), 3000000, 0.1, false},                // Raw Z80
+            {"ZEXALL", "zexall.bin", {}, 10000000, 100.0, true},                                  // CP/M program
+            {"Instruction Mix", "", generate_instruction_mix_test(10000), 5000000, 100.0, false}, // Raw Z80
+            {"Memory Intensive", "", generate_memory_intensive_test(1000), 2000000, 80.0, false}, // Raw Z80
+            {"Arithmetic Heavy", "", generate_arithmetic_test(50000), 5000000, 90.0, false},      // Raw Z80
+            {"Branch Heavy", "", generate_jump_test(10000), 3000000, 90.0, false},                // Raw Z80
         };
 
         // Run benchmarks
@@ -244,8 +244,8 @@ int main(int argc, char* argv[]) {
         std::cout << "Summary" << '\n';
         std::cout << "========================================" << '\n';
         std::cout << "Tests run: " << results.size() << '\n';
-        std::cout << "✓ Tests passed: " << passed << '\n';
-        std::cout << "✗ Tests failed: " << failed << '\n';
+        std::cout << "Passed: " << passed << '\n';
+        std::cout << "Failed: " << failed << '\n';
         std::cout << '\n';
 
         // Calculate average performance

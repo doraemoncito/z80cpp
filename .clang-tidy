@@ -1,0 +1,45 @@
+---
+# Clang-tidy configuration for Z80 emulator project
+Checks: |
+  -*, 
+  readability-*,
+  performance-*,
+  modernize-*,
+  bugprone-*,
+  clang-diagnostic-*,
+  cppcoreguidelines-*,
+  google-*,
+  -readability-magic-numbers,
+  -readability-uppercase-literal-suffix,
+  -cppcoreguidelines-avoid-magic-numbers,
+  -cppcoreguidelines-pro-bounds-array-to-pointer-decay,
+  -cppcoreguidelines-pro-type-cstyle-cast,
+  -cppcoreguidelines-pro-type-reinterpret-cast,
+  -google-readability-function-size,
+  -google-runtime-references,
+  -modernize-use-trailing-return-type,
+  -cppcoreguidelines-pro-bounds-constant-array-index,
+  -readability-function-cognitive-complexity,
+  -readability-function-size
+
+WarningsAsErrors: ''
+
+# Configure individual checks
+CheckOptions:
+  - key: 'readability-function-cognitive-complexity.Threshold'
+    value: '25'
+  - key: 'readability-function-size.StatementThreshold'
+    value: '800'
+  - key: 'readability-identifier-length.MinimumVariableNameLength'
+    value: '2'
+  - key: 'readability-identifier-length.MinimumParameterNameLength'
+    value: '2'
+  - key: 'readability-identifier-length.MinimumLoopCounterNameLength'
+    value: '1'
+  - key: 'readability-line-length.LineLength'
+    value: '120'
+  - key: 'bugprone-easily-swappable-parameters.MinimumLength'
+    value: '3'
+
+HeaderFilterRegex: '.*'
+InheritParentConfig: true
