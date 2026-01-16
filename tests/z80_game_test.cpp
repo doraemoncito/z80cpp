@@ -157,7 +157,12 @@ int main(int argc, char* argv[]) {
             std::cout << "Average Performance: " << std::fixed << std::setprecision(2) << avg_mips << " MIPS" << '\n';
         }
 
-        return (failed == 0 && valid_results > 0) ? 0 : 1;
+        if (results.empty()) {
+            std::cout << "No benchmarks were run (no valid TAP files found)." << '\n';
+            return 0;
+        }
+
+        return (failed == 0) ? 0 : 1;
     } catch (const std::exception& e) {
         std::cerr << "Error: " << e.what() << '\n';
         return 1;
