@@ -34,7 +34,7 @@
 #endif
 
 /* Union allowing a register pair to be accessed as bytes or as a word */
-using RegisterPair = union {
+union RegisterPair {
 #if __BYTE_ORDER__ == __ORDER_BIG_ENDIAN__
     struct {
         uint8_t hi, lo;
