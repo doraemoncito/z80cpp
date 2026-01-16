@@ -115,8 +115,8 @@ int main(int argc, char* argv[]) {
         for (const auto& tap_file : tap_files) {
             BenchmarkConfig config;
             // Set default expectations
-            config.instructions = 5000000;   // Run for 5M instructions
-            config.expected_min_mips = 5.0;  // Expect at least 5 MIPS (tolerant minimum)
+            config.instructions = 5000000;  // Run for 5M instructions
+            config.expected_min_mips = 5.0; // Expect at least 5 MIPS (tolerant minimum)
 
             if (load_game_from_tap(tap_file, config)) {
                 BenchmarkResult result = runBenchmark(config);
