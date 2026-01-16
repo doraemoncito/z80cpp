@@ -29,7 +29,7 @@ endif()
 
 add_test(
     NAME z80_sim_test
-    COMMAND ${CMAKE_COMMAND} -E env CTEST_INTERACTIVE_DEBUG_MODE=1 $<TARGET_FILE:z80_sim_test>
+    COMMAND $<TARGET_FILE:z80_sim_test>
     WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
 )
 
