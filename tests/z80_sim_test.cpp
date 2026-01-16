@@ -49,7 +49,7 @@ void Z80SimTest::poke16Impl(uint16_t address, RegisterPair word) {
 
 uint8_t Z80SimTest::inPortImpl(uint16_t port) {
     // 4 clocks for read byte from bus
-    tstates += 3;
+    tstates += 4;
     return z80Ports.at(port);
 }
 
