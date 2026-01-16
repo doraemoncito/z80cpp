@@ -1,5 +1,5 @@
-#ifndef Z80_TYPES_HPP
-#define Z80_TYPES_HPP
+#ifndef Z80_TYPES_H
+#define Z80_TYPES_H
 
 #include <cstdint>
 
@@ -47,4 +47,4 @@ using RegisterPair = union {
     uint16_t word;
 };
 
-#endif // Z80_TYPES_HPP
+#endif // Z80_TYPES_H

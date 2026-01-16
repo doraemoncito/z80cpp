@@ -1,5 +1,5 @@
-#ifndef Z80_SIM_TEST_HPP
-#define Z80_SIM_TEST_HPP
+#ifndef Z80_SIM_TEST_H
+#define Z80_SIM_TEST_H
 
 #include <array>
 #include <chrono>
@@ -58,4 +58,4 @@ class Z80SimTest : public Z80BusInterface<Z80SimTest> {
     void runTest(std::ifstream* fileStream);
 };
 
-#endif // Z80_SIM_TEST_HPP
+#endif // Z80_SIM_TEST_H

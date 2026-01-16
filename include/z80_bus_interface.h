@@ -1,5 +1,5 @@
-#ifndef Z80_BUS_INTERFACE_HPP
-#define Z80_BUS_INTERFACE_HPP
+#ifndef Z80_BUS_INTERFACE_H
+#define Z80_BUS_INTERFACE_H
 
 #include <cstdint>
 
@@ -8,22 +8,8 @@
 // CRTP bus interface: TBusInterface must implement the *Impl methods.
 template <typename TBusInterface> class Z80BusInterface {
   public:
-  private:
-    Z80BusInterface() = default;
-
-  public:
     ~Z80BusInterface() = default;
-
-  private:
-    Z80BusInterface(const Z80BusInterface&) = default;
-
-  public:
     Z80BusInterface& operator=(const Z80BusInterface&) = default;
-
-  private:
-    Z80BusInterface(Z80BusInterface&&) = default;
-
-  public:
     Z80BusInterface& operator=(Z80BusInterface&&) = default;
 
     /* Read opcode from RAM */
@@ -88,6 +74,10 @@ template <typename TBusInterface> class Z80BusInterface {
 #endif
 
   private:
+    Z80BusInterface() = default;
+    Z80BusInterface(const Z80BusInterface&) = default;
+    Z80BusInterface(Z80BusInterface&&) = default;
+
     TBusInterface& derived() {
         return static_cast<TBusInterface&>(*this);
     }
@@ -95,4 +85,4 @@ template <typename TBusInterface> class Z80BusInterface {
     friend TBusInterface;
 };
 
-#endif // Z80_BUS_INTERFACE_HPP
+#endif // Z80_BUS_INTERFACE_H
